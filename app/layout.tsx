@@ -11,8 +11,8 @@ import { AppLayout } from '@/components/AppLayout'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'MSME CashFlow',
-  description: 'Cashflow management for MSMEs',
+  title: 'MediHelp',
+  description: 'Doctor Practice Management System',
 }
 
 export const viewport = {

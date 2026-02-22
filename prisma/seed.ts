@@ -1,397 +1,165 @@
 import { PrismaClient } from '@prisma/client'
-import { PrismaPg } from '@prisma/adapter-pg'
 import { Pool } from 'pg'
-import dotenv from 'dotenv'
+import { PrismaPg } from '@prisma/adapter-pg'
 import bcrypt from 'bcrypt'
 
-dotenv.config()
-
-const connectionString = `${process.env.DATABASE_URL}`
-const pool = new Pool({ connectionString })
+const pool = new Pool({ connectionString: process.env.DATABASE_URL })
 const adapter = new PrismaPg(pool)
 const prisma = new PrismaClient({ adapter })
 
-// --- Helpers ---
-
-const getRandomInt = (min: number, max: number) => {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-};
-
-const getRandomElement = <T>(arr: T[]): T => {
-    return arr[Math.floor(Math.random() * arr.length)];
-};
-
-const addDays = (date: Date, days: number): Date => {
-    const result = new Date(date);
-    result.setDate(result.getDate() + days);
-    return result;
-};
-
-const getRandomFloat = (min: number, max: number, decimals: number = 2) => {
-    const str = (Math.random() * (max - min) + min).toFixed(decimals);
-    return parseFloat(str);
-};
-
-// --- Data Constants ---
-
-const COMPANY_NAMES = [
-    "Acme Corp", "Globex Corporation", "Soylent Corp", "Initech",
-    "Umbrella Corp", "Stark Industries", "Wayne Enterprises",
-    "Cyberdyne Systems", "Massive Dynamic", "Hooli",
-    "Vehement Capital", "Prestige Worldwide", "Dunder Mifflin",
-    "Aperture Science", "Black Mesa"
-];
-
-const VENDOR_NAMES = [
-    "Office Depot", "Tech Supplies Inc", "City Properties (Rent)",
-    "Power Grid Co", "Fast Logistics", "Raw Materials Ltd",
-    "ABC Consultants", "Global Internet Services", "Clean & Shine Services"
-];
-
-const EXPENSE_CATEGORIES = [
-    'Raw Materials / Purchases',
-    'Supplier Payments',
-    'Salaries & Wages',
-    'Rent / Lease',
-    'Utilities',
-    'Transport & Logistics',
-    'Packaging & Consumables',
-    'Loan EMI / Interest',
-    'Taxes & Statutory',
-    'Maintenance & Repairs',
-    'Marketing & Advertising',
-    'Professional Fees',
-    'Office Expenses',
-    'Miscellaneous',
-];
-
-const NAMES = [
-    "John Doe", "Jane Smith", "Alice Johnson", "Bob Brown",
-    "Charlie Davis", "Diana Evans", "Ethan Ford", "Fiona Green",
-    "George Harris", "Hannah Ian", "Ian Jenkins", "Karen Kelly"
-];
-
-const CITIES = [
-    "New York", "London", "Mumbai", "Delhi", "Bangalore",
-    "Singapore", "Dubai", "Toronto", "Sydney", "Berlin",
-    "San Francisco", "Tokyo", "Paris", "Chicago", "Boston"
-];
-
-const GST_RATES = [0, 5, 12, 18, 28];
-
-// --- Main Seeding Logic ---
-
 async function main() {
-    console.log('Start seeding ...');
+    console.log('🌱 Seeding MediHelp database...')
 
-    // 1. Cleanup existing data (Order matters for foreign keys)
+    // Clean existing data
+    await prisma.followUp.deleteMany()
+    await prisma.visit.deleteMany()
+    await prisma.patient.deleteMany()
+    await prisma.patientType.deleteMany()
+    await prisma.user.deleteMany()
 
+    // --- Users ---
+    const hashedPassword = await bcrypt.hash('doctor123', 10)
+    const receptionistPassword = await bcrypt.hash('reception123', 10)
 
-    // ... imports
+    const doctor = await prisma.user.create({
+        data: {
+            name: 'Dr. Dibyanshu',
+            email: 'doctor@medihelp.com',
+            password: hashedPassword,
+            role: 'DOCTOR',
+        },
+    })
 
-    // ... existing code ...
+    const receptionist = await prisma.user.create({
+        data: {
+            name: 'Priya Sharma',
+            email: 'reception@medihelp.com',
+            password: receptionistPassword,
+            role: 'RECEPTIONIST',
+        },
+    })
 
-    console.log('Cleaning up old data...');
-    // Cash In
-    await prisma.paymentEntry.deleteMany({});
-    await prisma.followUp.deleteMany({});
-    await prisma.invoice.deleteMany({});
-    await prisma.customer.deleteMany({});
+    console.log(`✅ Users: ${doctor.name} (DOCTOR), ${receptionist.name} (RECEPTIONIST)`)
 
-    // Cash Out
-    await prisma.vendorPayment.deleteMany({});
-    await prisma.vendorInvoice.deleteMany({});
-    await prisma.expense.deleteMany({});
-    await prisma.expenseCategory.deleteMany({});
-    await prisma.vendor.deleteMany({});
+    // --- Patient Types ---
+    const types = await Promise.all([
+        prisma.patientType.create({ data: { name: 'General', description: 'General check-up and routine visits' } }),
+        prisma.patientType.create({ data: { name: 'Diabetic', description: 'Diabetes management and monitoring' } }),
+        prisma.patientType.create({ data: { name: 'Cardiac', description: 'Heart-related conditions and monitoring' } }),
+        prisma.patientType.create({ data: { name: 'Pediatric', description: 'Child healthcare (0-18 years)' } }),
+        prisma.patientType.create({ data: { name: 'Orthopedic', description: 'Bone and joint conditions' } }),
+    ])
 
-    // Users
-    await prisma.user.deleteMany({});
+    const [general, diabetic, cardiac, pediatric, orthopedic] = types
+    console.log(`✅ Patient Types: ${types.map(t => t.name).join(', ')}`)
 
-    console.log('Cleared existing data.');
+    // --- Patients ---
+    const patientsData = [
+        { patientNumber: 'CLINIC-00001', name: 'Rajesh Kumar', phone: '9876543210', gender: 'MALE', bloodGroup: 'B+', chronicConditions: 'Diabetes Type 2', patientTypeId: diabetic.id, dateOfBirth: new Date('1968-03-15') },
+        { patientNumber: 'CLINIC-00002', name: 'Anita Verma', phone: '9876543211', gender: 'FEMALE', bloodGroup: 'A+', allergies: 'Penicillin', patientTypeId: general.id, dateOfBirth: new Date('1985-07-22') },
+        { patientNumber: 'CLINIC-00003', name: 'Suresh Patel', phone: '9876543212', gender: 'MALE', bloodGroup: 'O+', chronicConditions: 'Hypertension', patientTypeId: cardiac.id, dateOfBirth: new Date('1955-11-08') },
+        { patientNumber: 'CLINIC-00004', name: 'Meena Devi', phone: '9876543213', gender: 'FEMALE', bloodGroup: 'AB+', patientTypeId: general.id, dateOfBirth: new Date('1990-01-30') },
+        { patientNumber: 'CLINIC-00005', name: 'Baby Arjun', phone: '9876543214', gender: 'MALE', bloodGroup: 'O-', patientTypeId: pediatric.id, dateOfBirth: new Date('2020-05-10') },
+        { patientNumber: 'CLINIC-00006', name: 'Prakash Rao', phone: '9876543215', gender: 'MALE', bloodGroup: 'B-', chronicConditions: 'Arthritis', patientTypeId: orthopedic.id, dateOfBirth: new Date('1960-09-25') },
+        { patientNumber: 'CLINIC-00007', name: 'Sunita Sharma', phone: '9876543216', gender: 'FEMALE', bloodGroup: 'A-', allergies: 'Aspirin, Sulfa drugs', patientTypeId: general.id, dateOfBirth: new Date('1978-12-05') },
+        { patientNumber: 'CLINIC-00008', name: 'Mohammed Irfan', phone: '9876543217', gender: 'MALE', bloodGroup: 'AB-', chronicConditions: 'Diabetes Type 1, Hypertension', patientTypeId: diabetic.id, dateOfBirth: new Date('1972-04-18') },
+        { patientNumber: 'CLINIC-00009', name: 'Lakshmi Nair', phone: '9876543218', gender: 'FEMALE', bloodGroup: 'O+', patientTypeId: cardiac.id, dateOfBirth: new Date('1965-08-12') },
+        { patientNumber: 'CLINIC-00010', name: 'Baby Aarav', phone: '9876543219', gender: 'MALE', bloodGroup: 'A+', patientTypeId: pediatric.id, dateOfBirth: new Date('2022-02-14') },
+        { patientNumber: 'CLINIC-00011', name: 'Geeta Kumari', phone: '9876543220', gender: 'FEMALE', bloodGroup: 'B+', patientTypeId: general.id, dateOfBirth: new Date('1988-06-30') },
+        { patientNumber: 'CLINIC-00012', name: 'Vikram Singh', phone: '9876543221', gender: 'MALE', bloodGroup: 'O+', chronicConditions: 'Asthma', patientTypeId: general.id, dateOfBirth: new Date('1975-10-20') },
+    ]
 
-    // 1. Create Users
-    const hashedPassword = await bcrypt.hash('password123', 10);
+    const patients = await Promise.all(
+        patientsData.map(data => prisma.patient.create({ data }))
+    )
+    console.log(`✅ Patients: ${patients.length} created`)
 
-    await prisma.user.createMany({
-        data: [
-            {
-                name: "Admin User",
-                email: "test@email.com",
-                password: hashedPassword,
-                role: "OWNER"
-            },
-            {
-                name: "Accounts Manager",
-                email: "accounts@msme.com",
-                password: hashedPassword,
-                role: "ACCOUNTS"
-            },
-            {
-                name: "Sales Executive",
-                email: "sales@msme.com",
-                password: hashedPassword,
-                role: "SALES"
-            }
-        ]
-    });
-    console.log('Created test users.');
+    // --- Visits (spread across last 3 months) ---
+    const now = new Date()
+    const daysAgo = (d: number) => new Date(now.getTime() - d * 24 * 60 * 60 * 1000)
 
-    const customers = [];
+    const visitsData = [
+        // Rajesh Kumar - Diabetic, multiple visits
+        { patientId: patients[0].id, visitDate: daysAgo(60), bp: '140/90', temperature: 98.4, pulse: 78, weight: 82, symptoms: 'Frequent urination, increased thirst', diagnosis: 'Diabetes Type 2 - Uncontrolled', prescription: 'Metformin 500mg BD, Glimepiride 1mg OD', fee: 500, paymentMode: 'CASH' },
+        { patientId: patients[0].id, visitDate: daysAgo(30), bp: '130/85', temperature: 98.6, pulse: 74, weight: 80, symptoms: 'Follow-up, slight fatigue', diagnosis: 'Diabetes Type 2 - Improving', prescription: 'Continue Metformin 500mg BD', fee: 400, paymentMode: 'UPI', nextVisitDate: daysAgo(-7) },
 
-    // 2. Create Customers
-    for (let i = 0; i < 20; i++) {
-        const isCompany = Math.random() > 0.3;
-        const name = isCompany ? getRandomElement(COMPANY_NAMES) + ` ${i}` : getRandomElement(NAMES) + ` ${i}`;
+        // Anita Verma - General
+        { patientId: patients[1].id, visitDate: daysAgo(45), bp: '120/80', temperature: 100.2, pulse: 88, weight: 65, symptoms: 'Fever, body aches, cold', diagnosis: 'Viral fever', prescription: 'Paracetamol 500mg TDS x 3 days, Cetirizine 10mg OD', fee: 300, paymentMode: 'CASH' },
 
-        customers.push(await prisma.customer.create({
+        // Suresh Patel - Cardiac
+        { patientId: patients[2].id, visitDate: daysAgo(20), bp: '160/100', temperature: 98.2, pulse: 92, weight: 78, symptoms: 'Chest tightness, breathlessness on exertion', diagnosis: 'Hypertension Grade 2', prescription: 'Amlodipine 5mg OD, Aspirin 75mg OD', labTests: 'ECG, Lipid Profile, Blood Sugar', fee: 800, paymentMode: 'UPI', nextVisitDate: daysAgo(-5) },
+        { patientId: patients[2].id, visitDate: daysAgo(50), bp: '150/95', temperature: 98.4, pulse: 88, weight: 79, symptoms: 'Routine cardiac review', diagnosis: 'Hypertension - Managed', prescription: 'Continue Amlodipine 5mg OD', fee: 600, paymentMode: 'CASH' },
+
+        // Baby Arjun - Pediatric
+        { patientId: patients[4].id, visitDate: daysAgo(10), bp: undefined, temperature: 101.5, pulse: 110, weight: 14, symptoms: 'High fever, running nose, cough', diagnosis: 'Upper respiratory tract infection', prescription: 'Syrup Paracetamol 5ml TDS, Syrup Amoxicillin 5ml BD x 5 days', fee: 400, paymentMode: 'CASH', nextVisitDate: daysAgo(-3) },
+
+        // Prakash Rao - Orthopedic
+        { patientId: patients[5].id, visitDate: daysAgo(15), bp: '130/80', temperature: 98.6, pulse: 72, weight: 75, symptoms: 'Knee pain, difficulty walking', diagnosis: 'Osteoarthritis - Bilateral knees', prescription: 'Tab Diclofenac 50mg BD, Cap Calcium+D3 OD, Knee exercises', labTests: 'X-Ray both knees', fee: 700, paymentMode: 'CARD' },
+
+        // Mohammed Irfan - Diabetic
+        { patientId: patients[7].id, visitDate: daysAgo(5), bp: '145/92', temperature: 98.4, pulse: 80, weight: 88, symptoms: 'Blurred vision, numbness in feet', diagnosis: 'Diabetic neuropathy', prescription: 'Insulin Glargine 10U HS, Pregabalin 75mg BD', labTests: 'HbA1c, Renal Profile, Fundoscopy', fee: 1000, paymentMode: 'UPI', nextVisitDate: daysAgo(-14) },
+
+        // Lakshmi Nair - Cardiac
+        { patientId: patients[8].id, visitDate: daysAgo(25), bp: '155/98', temperature: 98.6, pulse: 85, weight: 68, symptoms: 'Palpitations, anxiety', diagnosis: 'Atrial fibrillation', prescription: 'Metoprolol 25mg BD, Warfarin 2mg OD', labTests: 'ECG, 2D Echo, PT/INR', fee: 900, paymentMode: 'CASH' },
+
+        // Geeta Kumari - General
+        { patientId: patients[10].id, visitDate: daysAgo(3), bp: '110/70', temperature: 98.6, pulse: 68, weight: 58, symptoms: 'Routine health check-up', diagnosis: 'Normal health', prescription: 'Multivitamin OD', fee: 300, paymentMode: 'UPI' },
+
+        // Vikram Singh - General (Asthma)
+        { patientId: patients[11].id, visitDate: daysAgo(8), bp: '125/78', temperature: 98.8, pulse: 90, weight: 72, symptoms: 'Wheezing, difficulty breathing at night', diagnosis: 'Bronchial Asthma - moderate', prescription: 'Inhaler Budesonide+Formoterol 200/6 BD, Montelukast 10mg HS', fee: 600, paymentMode: 'CASH', nextVisitDate: daysAgo(-10) },
+    ]
+
+    const visits = []
+    for (const data of visitsData) {
+        const { nextVisitDate, ...visitData } = data
+        const visit = await prisma.visit.create({
             data: {
-                name: name,
-                email: `contact${i}@${name.replace(/\s+/g, '').replace(/[^a-zA-Z]/g, '').toLowerCase()}.com`,
-                phone: `98765${getRandomInt(10000, 99999)}`,
-                location: getRandomElement(CITIES),
-                creditTerms: getRandomElement([15, 30, 45, 60]),
-            }
-        }));
-    }
-    console.log(`Created ${customers.length} customers.`);
+                ...visitData,
+                nextVisitDate: nextVisitDate || undefined,
+            },
+        })
+        visits.push(visit)
 
-    // 3. Create Invoices (Sales with GST)
-    let invoiceCount = 0;
-    for (const customer of customers) {
-        const numInvoices = getRandomInt(3, 8);
-        for (let j = 0; j < numInvoices; j++) {
-            const invoiceDate = addDays(new Date(), -getRandomInt(0, 90)); // Past 3 months mainly
-            const dueDate = addDays(invoiceDate, customer.creditTerms || 30);
-            const today = new Date();
-            const isOverdue = dueDate < today;
-
-            // Financials
-            const baseAmount = getRandomInt(1000, 50000);
-            const gstRate = getRandomElement(GST_RATES);
-            const gstAmount = parseFloat((baseAmount * (gstRate / 100)).toFixed(2));
-            const totalAmount = baseAmount + gstAmount;
-
-            // Status Logic
-            let status = 'UNPAID';
-            let paidAmount = 0;
-            const scenario = Math.random();
-
-            if (scenario < 0.3) {
-                status = 'PAID';
-                paidAmount = totalAmount; // User pays full including GST
-            }
-            else if (scenario < 0.6) {
-                status = isOverdue ? 'OVERDUE' : 'UNPAID';
-                paidAmount = 0;
-            }
-            else if (scenario < 0.7) {
-                status = 'PARTIAL';
-                paidAmount = getRandomInt(100, Math.floor(totalAmount - 100));
-            }
-            else {
-                status = isOverdue ? 'OVERDUE' : 'UNPAID';
-            }
-
-            if (paidAmount >= totalAmount) status = 'PAID';
-            else if (paidAmount > 0) status = 'PARTIAL';
-            else if (isOverdue) status = 'OVERDUE';
-
-            const invoice = await prisma.invoice.create({
+        // Auto-create follow-up for visits with nextVisitDate
+        if (nextVisitDate) {
+            await prisma.followUp.create({
                 data: {
-                    customerId: customer.id,
-                    invoiceNo: `INV-${new Date().getFullYear()}-${getRandomInt(1000, 9999)}-${invoiceCount}`,
-                    invoiceDate: invoiceDate,
-                    dueDate: dueDate,
-
-                    invoiceAmount: baseAmount,
-                    gstAmount: gstAmount,
-                    gstRate: gstRate,
-                    isGstInclusive: false,
-
-                    paidAmount: paidAmount,
-                    outstandingAmount: totalAmount - paidAmount,
-                    status: status,
-                }
-            });
-            invoiceCount++;
-
-            if (paidAmount > 0) {
-                await prisma.paymentEntry.create({
-                    data: {
-                        invoiceId: invoice.id,
-                        amount: paidAmount,
-                        paymentDate: addDays(invoiceDate, getRandomInt(1, 10)),
-                        method: getRandomElement(['UPI', 'BANK', 'CASH', 'CHEQUE']),
-                        reference: `REF-${getRandomInt(10000, 99999)}`,
-                        notes: "Seed payment"
-                    }
-                });
-            }
-
-            if (status === 'OVERDUE' || status === 'PARTIAL') {
-                await prisma.followUp.create({
-                    data: {
-                        invoiceId: invoice.id,
-                        followUpDate: addDays(today, getRandomInt(1, 5)),
-                        method: 'CALL',
-                        status: 'SCHEDULED',
-                        notes: "Scheduled follow up call.",
-                    }
-                });
-            }
+                    patientId: data.patientId,
+                    visitId: visit.id,
+                    followUpDate: nextVisitDate,
+                    method: 'WHATSAPP',
+                    status: nextVisitDate < now ? 'MISSED' : 'CONFIRMED',
+                    notes: `Auto-scheduled from visit on ${new Date(data.visitDate).toLocaleDateString()}`,
+                },
+            })
         }
     }
-    console.log(`Created ${invoiceCount} customer invoices.`);
+    console.log(`✅ Visits: ${visits.length} created (with auto follow-ups)`)
 
+    // --- Additional follow-ups ---
+    const additionalFollowUps = [
+        { patientId: patients[0].id, followUpDate: daysAgo(2), method: 'CALL', status: 'VISITED', notes: 'Patient confirmed visit' },
+        { patientId: patients[3].id, followUpDate: daysAgo(-2), method: 'WHATSAPP', status: 'CONFIRMED', notes: 'Routine check-up reminder' },
+        { patientId: patients[6].id, followUpDate: daysAgo(-1), method: 'SMS', status: 'CONFIRMED', notes: 'Follow-up for lab results' },
+        { patientId: patients[9].id, followUpDate: daysAgo(5), method: 'CALL', status: 'NO_RESPONSE', notes: 'Called twice, no answer' },
+    ]
 
-    // --- CASH OUT SEEDING ---
-
-    // 4. Create Vendors
-    const vendors = [];
-    for (const vName of VENDOR_NAMES) {
-        vendors.push(await prisma.vendor.create({
-            data: {
-                name: vName,
-                email: `info@${vName.split(' ')[0].toLowerCase()}.com`,
-                phone: `99887${getRandomInt(10000, 99999)}`,
-                creditTerms: getRandomElement([15, 30, 45]),
-                notes: "Prime vendor"
-            }
-        }));
+    for (const fu of additionalFollowUps) {
+        await prisma.followUp.create({ data: fu })
     }
-    console.log(`Created ${vendors.length} vendors.`);
+    console.log(`✅ Additional follow-ups: ${additionalFollowUps.length} created`)
 
-    // 5. Create Expense Categories
-    const categories = [];
-    for (const catName of EXPENSE_CATEGORIES) {
-        categories.push(await prisma.expenseCategory.create({
-            data: { name: catName }
-        }));
-    }
-    console.log(`Created ${categories.length} expense categories.`);
-
-    // 6. Create Expenses (Immediate Cash Out)
-    let expenseCount = 0;
-    for (let i = 0; i < 40; i++) {
-        const cat = getRandomElement(categories);
-        const relatedVendor = Math.random() > 0.5 ? getRandomElement(vendors) : null;
-
-        // Financials
-        const baseAmount = getRandomInt(500, 15000);
-        const gstRate = getRandomElement(GST_RATES);
-        const gstAmount = parseFloat((baseAmount * (gstRate / 100)).toFixed(2));
-
-        // GST Eligibility (Claimable vs Blocked)
-        // 80% Eligible, 20% Blocked
-        const isGstEligible = Math.random() < 0.8;
-
-        await prisma.expense.create({
-            data: {
-                categoryId: cat.id,
-                vendorId: relatedVendor?.id,
-                expenseDate: addDays(new Date(), -getRandomInt(0, 60)),
-                amount: baseAmount,
-
-                gstAmount: gstAmount,
-                gstRate: gstRate,
-                isGstInclusive: false,
-                isGstEligible: isGstEligible,
-
-                paymentMode: getRandomElement(['CASH', 'UPI', 'BANK']),
-                notes: `Payment for ${cat.name}`
-            }
-        });
-        expenseCount++;
-    }
-    console.log(`Created ${expenseCount} expenses.`);
-
-    // 7. Create Vendor Invoices (Payables)
-    let vendorInvoiceCount = 0;
-    for (const vendor of vendors) {
-        const numInvoices = getRandomInt(2, 6);
-
-        for (let k = 0; k < numInvoices; k++) {
-            const invoiceDate = addDays(new Date(), -getRandomInt(0, 90));
-            const dueDate = addDays(invoiceDate, vendor.creditTerms || 30);
-            const today = new Date();
-            const isOverdue = dueDate < today;
-
-            // Financials
-            const baseAmount = getRandomInt(2000, 70000);
-            const gstRate = getRandomElement(GST_RATES);
-            // Vendor invoices usually have GST
-            const gstAmount = parseFloat((baseAmount * (gstRate / 100)).toFixed(2));
-            const totalAmount = baseAmount + gstAmount;
-
-            const isGstEligible = Math.random() < 0.9; // 90% claimable for vendors
-
-            // Scenario: 40% Paid, 30% Unpaid, 30% Overdue
-            let status = 'UNPAID';
-            let paidAmount = 0;
-            const scenario = Math.random();
-
-            if (scenario < 0.4) {
-                status = 'PAID';
-                paidAmount = totalAmount;
-            } else if (scenario < 0.7) {
-                status = isOverdue ? 'OVERDUE' : 'UNPAID';
-                paidAmount = 0;
-            } else {
-                // Partial
-                status = 'PARTIAL';
-                paidAmount = getRandomInt(500, Math.floor(totalAmount - 100));
-            }
-
-            if (paidAmount >= totalAmount) status = 'PAID';
-            else if (paidAmount > 0) status = 'PARTIAL';
-            else if (isOverdue) status = 'OVERDUE';
-
-            const vinv = await prisma.vendorInvoice.create({
-                data: {
-                    vendorId: vendor.id,
-                    invoiceNo: `SUP-${vendor.name.substring(0, 3).toUpperCase()}-${getRandomInt(1000, 9999)}`,
-                    invoiceDate: invoiceDate,
-                    dueDate: dueDate,
-
-                    invoiceAmount: baseAmount,
-                    gstAmount: gstAmount,
-                    gstRate: gstRate,
-                    isGstInclusive: false,
-                    isGstEligible: isGstEligible,
-
-                    paidAmount: paidAmount,
-                    outstandingAmount: totalAmount - paidAmount,
-                    status: status
-                }
-            });
-            vendorInvoiceCount++;
-
-            if (paidAmount > 0) {
-                await prisma.vendorPayment.create({
-                    data: {
-                        vendorInvoiceId: vinv.id,
-                        amount: paidAmount,
-                        paymentDate: addDays(invoiceDate, getRandomInt(1, 5)),
-                        method: getRandomElement(['BANK', 'UPI']),
-                        reference: `TXN-${getRandomInt(100000, 999999)}`,
-                        notes: "Payment to vendor"
-                    }
-                });
-            }
-        }
-    }
-    console.log(`Created ${vendorInvoiceCount} vendor invoices.`);
-
-    console.log('Seeding finished.');
+    console.log('\n🎉 Seeding complete! MediHelp is ready.')
+    console.log('\n📋 Login credentials:')
+    console.log('   Doctor:       doctor@medihelp.com / doctor123')
+    console.log('   Receptionist: reception@medihelp.com / reception123')
 }
 
 main()
-    .then(async () => {
-        await prisma.$disconnect()
-    })
-    .catch(async (e) => {
-        console.error(e)
-        await prisma.$disconnect()
+    .catch((e) => {
+        console.error('❌ Seeding failed:', e)
         process.exit(1)
+    })
+    .finally(async () => {
+        await prisma.$disconnect()
     })

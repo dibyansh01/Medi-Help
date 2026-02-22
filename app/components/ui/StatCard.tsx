@@ -9,12 +9,15 @@ interface StatCardProps {
     value: string | number;
     highlight?: boolean;
     color?: 'default' | 'danger' | 'success' | 'warning' | 'info' | 'gray';
+    variant?: 'default' | 'danger' | 'success' | 'warning' | 'info';
     subtext?: string;
+    subtitle?: string;
+    icon?: string;
     href?: string;
     tooltip?: string;
 }
 
-export function StatCard({ title, value, color = 'default', subtext, href, tooltip }: StatCardProps) {
+export function StatCard({ title, value, color = 'default', variant, subtext, subtitle, icon, href, tooltip }: StatCardProps) {
     const [isTooltipOpen, setIsTooltipOpen] = useState(false);
     const tooltipRef = useRef<HTMLDivElement>(null);
 
@@ -48,14 +51,16 @@ export function StatCard({ title, value, color = 'default', subtext, href, toolt
         gray: 'text-gray-500 dark:text-gray-400',
     };
 
-    const valueColor = colorMap[color as keyof typeof colorMap] || 'text-foreground';
+    const resolvedColor = variant || color;
+    const valueColor = colorMap[resolvedColor as keyof typeof colorMap] || 'text-foreground';
 
     const cardContent = (
         <Card className={`hover:scale-[1.02] transition-transform h-full ${href ? 'cursor-pointer' : ''} ${isTooltipOpen ? 'z-50 relative' : ''}`}>
             <div className="flex flex-col gap-1 h-full justify-between">
                 <div>
                     <div className="flex items-center justify-between relative">
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
+                            {icon && <span className="text-base">{icon}</span>}
                             {title}
                         </p>
                         {tooltip && (
@@ -94,8 +99,8 @@ export function StatCard({ title, value, color = 'default', subtext, href, toolt
                         {value}
                     </div>
                 </div>
-                {subtext && (
-                    <p className="text-xs text-gray-400 mt-1">{subtext}</p>
+                {(subtext || subtitle) && (
+                    <p className="text-xs text-gray-400 mt-1">{subtext || subtitle}</p>
                 )}
             </div>
         </Card>

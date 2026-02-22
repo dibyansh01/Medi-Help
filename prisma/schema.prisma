@@ -12,182 +12,105 @@ model User {
   name      String
   email     String   @unique
   password  String
-  role      String   // OWNER, ACCOUNTS, SALES
+  role      String   // DOCTOR, RECEPTIONIST, ADMIN
   createdAt DateTime @default(now())
 }
 
-/// Represents a client or customer of the business
-model Customer {
+/// Categorizes patients by condition type (e.g., Diabetic, Cardiac, General)
+model PatientType {
   id          String   @id @default(uuid())
-  name        String
-  phone       String?
-  email       String?
-  location    String?  // City or Region
-
-  creditTerms Int?     // Number of days for credit
-  notes       String?  // Additional notes
+  name        String   @unique
+  description String?
   createdAt   DateTime @default(now())
 
-  invoices    Invoice[]
+  patients Patient[]
 }
 
-/// Represents an invoice generated for a customer
-model Invoice {
+/// Represents a patient registered at the clinic
+model Patient {
+  id               String   @id @default(uuid())
+  patientNumber    String   @unique // Auto-generated: CLINIC-00001
+  name             String
+  phone            String
+  email            String?
+  gender           String?  // MALE, FEMALE, OTHER
+  dateOfBirth      DateTime?
+  bloodGroup       String?  // A+, A-, B+, B-, O+, O-, AB+, AB-
+  allergies        String?  // Comma-separated or free text
+  chronicConditions String? // Comma-separated or free text
+  address          String?
+  patientTypeId    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patientType PatientType? @relation(fields: [patientTypeId], references: [id])
+  visits      Visit[]
+  followUps   FollowUp[]
+
+  @@index([phone])
+  @@index([patientNumber])
+  @@index([createdAt])
+  @@index([name])
+}
+
+/// Represents a clinical visit / encounter (EMR entry)
+/// Visit records are immutable — no destructive updates allowed
+model Visit {
   id            String   @id @default(uuid())
-  customerId    String
-  invoiceNo     String   // Unique invoice number
-  invoiceDate   DateTime
-  dueDate       DateTime
-  
-  invoiceAmount Float    // Base amount (excluding GST)
-  gstAmount     Float?   // GST charged on invoice (optional)
-  gstRate       Float?   // GST rate (e.g. 5, 12, 18)
-  isGstInclusive Boolean  @default(false)
+  patientId     String
 
-  paidAmount    Float    @default(0)
-  outstandingAmount Float // Base amount + GST - paidAmount
+  visitDate     DateTime @default(now())
 
-  status        String   // UNPAID, PARTIAL, PAID, OVERDUE
+  // Vitals
+  bp            String?  // e.g., "120/80"
+  temperature   Float?   // in °F or °C
+  pulse         Int?     // beats per minute
+  weight        Float?   // in kg
+
+  // Clinical
+  symptoms      String?  // Free text
+  diagnosis     String?  // Free text
+  prescription  String?  // Structured or free text
+  labTests      String?  // Free text
+
+  // Scheduling
+  nextVisitDate DateTime?
+
+  // Billing
+  fee           Float?
+  paymentMode   String?  // CASH, UPI, CARD, INSURANCE
+
+  notes         String?
   createdAt     DateTime @default(now())
 
-  customer Customer @relation(fields: [customerId], references: [id])
-  followUps FollowUp[]   
-  payments   PaymentEntry[] 
-  @@index([customerId])
-  @@index([dueDate])
-  @@index([status])
+  patient   Patient    @relation(fields: [patientId], references: [id])
+  followUps FollowUp[]
+
+  @@index([patientId])
+  @@index([visitDate])
+  @@index([nextVisitDate])
 }
 
-/// Represents a follow-up action taken for an invoice
+/// Represents a follow-up action / appointment reminder for a patient
 model FollowUp {
-  id              String   @id @default(uuid())
-  invoiceId       String
-  followUpDate    DateTime @default(now())
-  method          String   // CALL, WHATSAPP, EMAIL, VISIT
-  status          String   // PROMISED, NO_RESPONSE, PAID, DISPUTED
-  notes           String?
-  nextFollowUpOn  DateTime?
-  createdAt       DateTime @default(now())
+  id             String   @id @default(uuid())
+  patientId      String
+  visitId        String?
 
-  invoice Invoice @relation(fields: [invoiceId], references: [id])
+  followUpDate   DateTime
+  method         String   // CALL, WHATSAPP, SMS, VISIT
+  status         String   @default("CONFIRMED") // CONFIRMED, NO_RESPONSE, RESCHEDULED, VISITED, MISSED
+  notes          String?
+  nextFollowUpOn DateTime?
 
-  @@index([invoiceId])
-}
-
-/// Represents a payment received for an invoice
-model PaymentEntry {
-  id          String   @id @default(uuid())
-  invoiceId  String
-  amount     Float
-  paymentDate DateTime @default(now())
-  method      String   // CASH, UPI, BANK, CHEQUE, OTHER
-  reference   String?  // Transaction ID or Cheque Number
-  notes       String?
-  createdAt   DateTime @default(now())
-
-  invoice Invoice @relation(fields: [invoiceId], references: [id])
-
-  @@index([invoiceId])
-}
-
-/// ======================================================
-/// ================= CASH OUT ============================
-/// ======================================================
-
-
-/// =====================
-/// VENDORS
-/// =====================
-model Vendor {
-  id          String   @id @default(uuid())
-  name        String
-  phone       String?
-  email       String?
-  creditTerms Int?     // days
-  notes       String?
-  createdAt   DateTime @default(now())
-
-  expenses        Expense[]
-  invoices        VendorInvoice[]
-}
-
-/// =====================
-/// EXPENSE CATEGORIES
-/// =====================
-model ExpenseCategory {
-  id        String   @id @default(uuid())
-  name      String   // Rent, Salary, Raw Material, etc.
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  expenses Expense[]
-}
+  patient Patient @relation(fields: [patientId], references: [id])
+  visit   Visit?  @relation(fields: [visitId], references: [id])
 
-/// =====================
-/// EXPENSE (IMMEDIATE CASH OUT)
-/// =====================
-model Expense {
-  id          String   @id @default(uuid())
-  vendorId    String?
-  categoryId  String
-  expenseDate DateTime
-  amount      Float   // Base expense amount
-  gstAmount     Float?
-  gstRate       Float?
-  isGstInclusive Boolean @default(false)
-  isGstEligible  Boolean @default(false)
-  paymentMode String   // CASH, BANK, UPI
-  notes       String?
-  createdAt   DateTime @default(now())
-
-  vendor   Vendor?         @relation(fields: [vendorId], references: [id])
-  category ExpenseCategory @relation(fields: [categoryId], references: [id])
-
-  @@index([expenseDate])
-}
-
-/// =====================
-/// VENDOR INVOICE (CREDIT)
-/// =====================
-model VendorInvoice {
-  id                String   @id @default(uuid())
-  vendorId          String
-  invoiceNo         String
-  invoiceDate       DateTime
-  dueDate           DateTime
-
-  invoiceAmount     Float    // Base amount (excluding GST)
-  gstAmount         Float?
-  gstRate           Float?
-  isGstInclusive    Boolean  @default(false)
-  isGstEligible     Boolean  @default(true)
-  paidAmount        Float    @default(0)
-  outstandingAmount Float
-
-  status            String   // UNPAID, PARTIAL, PAID
-  description       String?
-  createdAt         DateTime @default(now())
-
-  vendor   Vendor @relation(fields: [vendorId], references: [id])
-  payments VendorPayment[]
-
-  @@index([vendorId])
-  @@index([dueDate])
-}
-
-/// =====================
-/// VENDOR PAYMENT
-/// =====================
-model VendorPayment {
-  id              String   @id @default(uuid())
-  vendorInvoiceId String
-  amount          Float
-  paymentDate     DateTime @default(now())
-  method          String   // CASH, UPI, BANK, CHEQUE
-  reference       String?  // Transaction ID
-  notes           String?
-  createdAt       DateTime @default(now())
-
-  vendorInvoice VendorInvoice @relation(fields: [vendorInvoiceId], references: [id])
-
-  @@index([vendorInvoiceId])
+  @@index([patientId])
+  @@index([followUpDate])
+  @@index([status])
 }
