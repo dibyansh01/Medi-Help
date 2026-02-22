@@ -1,0 +1,187 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  /* Light Mode - Bright, Clean, Professional */
+  --background: #ffffff;
+  --foreground: #334155;
+  /* Slate 700 - softer than pure black */
+
+  /* Primary Brand Colors - Professional Blue */
+  --primary: #2563eb;
+  /* Blue 600 */
+  --primary-foreground: #ffffff;
+
+  /* Secondary - Clean background elements */
+  --secondary: #f1f5f9;
+  /* Slate 100 */
+  --secondary-foreground: #0f172a;
+  /* Slate 900 */
+
+  /* Card / Surface - Crisp White with subtle transparency */
+  --card: rgba(255, 255, 255, 0.85);
+  --card-foreground: #1e293b;
+  --card-border: rgba(226, 232, 240, 0.8);
+  /* Slate 200 */
+
+  /* Status Colors - Clear & Bright */
+  --success: #16a34a;
+  /* Green 600 */
+  --success-foreground: #ffffff;
+
+  --warning: #ea580c;
+  /* Orange 600 - more distinct than yellow */
+  --warning-foreground: #ffffff;
+
+  --danger: #dc2626;
+  /* Red 600 */
+  --danger-foreground: #ffffff;
+
+  /* Border */
+  --border: #e2e8f0;
+}
+
+.dark {
+  /* Dark Mode - Professional Navy/Slate, not Pitch Black */
+  --background: #0f172a;
+  /* Slate 900 */
+  --foreground: #f8fafc;
+
+  --primary: #3b82f6;
+  /* Blue 500 - slightly lighter for dark mode */
+  --primary-foreground: #ffffff;
+
+  --secondary: #1e293b;
+  /* Slate 800 */
+  --secondary-foreground: #cbd5e1;
+
+  /* Card / Surface */
+  --card: rgba(30, 41, 59, 0.7);
+  /* Slate 800 with opacity */
+  --card-foreground: #f1f5f9;
+  --card-border: rgba(255, 255, 255, 0.1);
+
+  --border: #334155;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-card-border: var(--card-border);
+  --color-border: var(--border);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+
+  /* Animations */
+  --animate-fade-in: fade-in 0.6s ease-out;
+  --animate-slide-up: slide-up 0.5s ease-out;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans, system-ui, sans-serif);
+  min-height: 100vh;
+
+  /* Very subtle, professional mesh gradient - Lighter & cleaner */
+  background-image:
+    radial-gradient(circle at 15% 50%, rgba(37, 99, 235, 0.08), transparent 25%),
+    radial-gradient(circle at 85% 30%, rgba(14, 165, 233, 0.08), transparent 25%);
+  background-attachment: fixed;
+}
+
+/* ── Sidebar height-responsive scaling ── */
+/* Short screens (laptops, small monitors): compact the sidebar */
+@media (max-height: 800px) {
+  .sidebar-nav-item {
+    padding-top: 0.375rem !important;
+    /* py-1.5 */
+    padding-bottom: 0.375rem !important;
+    font-size: 0.8125rem !important;
+    /* ~13px */
+  }
+
+  .sidebar-nav-group {
+    margin-bottom: 0.25rem !important;
+  }
+
+  .sidebar-group-title {
+    font-size: 0.625rem !important;
+    /* 10px */
+    margin-bottom: 0.25rem !important;
+  }
+
+  .sidebar-header {
+    height: 3rem !important;
+    /* 48px instead of 64px */
+  }
+
+  .sidebar-footer {
+    padding: 0.5rem !important;
+  }
+
+  .sidebar-user-avatar {
+    width: 2rem !important;
+    height: 2rem !important;
+    min-width: 2rem !important;
+    font-size: 0.75rem !important;
+  }
+}
+
+/* Very short screens (small laptops, tablets landscape) */
+@media (max-height: 650px) {
+  .sidebar-nav-item {
+    padding-top: 0.25rem !important;
+    /* py-1 */
+    padding-bottom: 0.25rem !important;
+    font-size: 0.75rem !important;
+    /* 12px */
+    gap: 0.5rem !important;
+  }
+
+  .sidebar-nav-group {
+    margin-bottom: 0 !important;
+  }
+
+  .sidebar-group-title {
+    display: none !important;
+  }
+
+  .sidebar-header {
+    height: 2.5rem !important;
+    /* 40px */
+  }
+
+  .sidebar-footer {
+    padding: 0.375rem !important;
+  }
+
+  .sidebar-user-avatar {
+    width: 1.75rem !important;
+    height: 1.75rem !important;
+    min-width: 1.75rem !important;
+  }
+}
