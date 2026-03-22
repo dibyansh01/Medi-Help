@@ -33,6 +33,20 @@ export async function createVisit(
     const paymentMode = (formData.get('paymentMode') as string) || undefined
     const notes = (formData.get('notes') as string) || undefined
 
+    const heightStr = formData.get('height') as string
+    const bmiStr = formData.get('bmi') as string
+    const isNonVeg = formData.get('isNonVeg') === 'true'
+    const alcohol = formData.get('alcohol') === 'true'
+    const smoking = formData.get('smoking') === 'true'
+    const drugAllergy = (formData.get('drugAllergy') as string) || undefined
+    const surgeryHistory = (formData.get('surgeryHistory') as string) || undefined
+    const chiefComplaint = (formData.get('chiefComplaint') as string) || undefined
+    const historyOfPresentIllness = (formData.get('historyOfPresentIllness') as string) || undefined
+    const examination = (formData.get('examination') as string) || undefined
+    const provisionalDiagnosis = (formData.get('provisionalDiagnosis') as string) || undefined
+    const investigations = (formData.get('investigations') as string) || undefined
+    const finalDiagnosis = (formData.get('finalDiagnosis') as string) || undefined
+
     if (!patientId) {
         return { error: 'Patient is required' }
     }
@@ -43,6 +57,16 @@ export async function createVisit(
         const weight = weightStr ? parseFloat(weightStr) : undefined
         const fee = feeStr ? parseFloat(feeStr) : undefined
         const nextVisitDate = nextVisitDateStr ? new Date(nextVisitDateStr) : undefined
+
+        const height = heightStr ? parseFloat(heightStr) : undefined
+        const bmi = bmiStr ? parseFloat(bmiStr) : undefined
+
+        if (height !== undefined && (height < 0.5 || height > 2.5)) {
+            return { error: 'Height must be between 0.5 and 2.5 meters' }
+        }
+        if (weight !== undefined && (weight < 1 || weight > 300)) {
+            return { error: 'Weight must be between 1 and 300 kg' }
+        }
 
         // Create the visit record
         const visit = await prisma.visit.create({
@@ -60,6 +84,19 @@ export async function createVisit(
                 fee,
                 paymentMode,
                 notes,
+                height,
+                bmi,
+                isNonVeg,
+                alcohol,
+                smoking,
+                drugAllergy,
+                surgeryHistory,
+                chiefComplaint,
+                historyOfPresentIllness,
+                examination,
+                provisionalDiagnosis,
+                investigations,
+                finalDiagnosis,
             },
         })
 

@@ -67,12 +67,27 @@ model Visit {
   temperature   Float?   // in °F or °C
   pulse         Int?     // beats per minute
   weight        Float?   // in kg
+  height        Float?   // in meters
+  bmi           Float?
+
+  // Risk Factors
+  isNonVeg      Boolean?
+  alcohol       Boolean?
+  smoking       Boolean?
+  drugAllergy   String?
+  surgeryHistory String?
 
   // Clinical
-  symptoms      String?  // Free text
-  diagnosis     String?  // Free text
+  symptoms      String?  // Free text (Legacy)
+  diagnosis     String?  // Free text (Legacy)
   prescription  String?  // Structured or free text
-  labTests      String?  // Free text
+  labTests      String?  // Free text (Legacy)
+  chiefComplaint String?
+  historyOfPresentIllness String?
+  examination   String?
+  provisionalDiagnosis String?
+  investigations String?
+  finalDiagnosis String?
 
   // Scheduling
   nextVisitDate DateTime?
