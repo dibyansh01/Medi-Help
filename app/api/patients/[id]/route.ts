@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db/prisma'
+import { getPatientBasicInfo } from '@/services'
 import { NextResponse } from 'next/server'
 
 export async function GET(
@@ -6,10 +6,7 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ) {
     const { id } = await params
-    const patient = await prisma.patient.findUnique({
-        where: { id },
-        select: { id: true, name: true, phone: true, patientNumber: true },
-    })
+    const patient = await getPatientBasicInfo(id)
 
     if (!patient) {
         return NextResponse.json({ error: 'Not found' }, { status: 404 })

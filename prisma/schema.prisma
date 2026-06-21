@@ -6,6 +6,22 @@ datasource db {
   provider = "postgresql"
 }
 
+/// Represents a clinic/organization in the multi-tenant system.
+/// Each tenant has a unique slug used in URL routing (/[tenant]/dashboard).
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  settings  Json?
+  plan      String   @default("FREE") // FREE, PRO, ENTERPRISE
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users    User[]
+  patients Patient[]
+}
+
 /// Represents a system user with access roles
 model User {
   id        String   @id @default(uuid())
@@ -13,7 +29,12 @@ model User {
   email     String   @unique
   password  String
   role      String   // DOCTOR, RECEPTIONIST, ADMIN
+  tenantId  String?
   createdAt DateTime @default(now())
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
 }
 
 /// Categorizes patients by condition type (e.g., Diabetic, Cardiac, General)
@@ -40,11 +61,13 @@ model Patient {
   chronicConditions String? // Comma-separated or free text
   address          String?
   patientTypeId    String?
+  tenantId         String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   patientType PatientType? @relation(fields: [patientTypeId], references: [id])
+  tenant      Tenant?      @relation(fields: [tenantId], references: [id])
   visits      Visit[]
   followUps   FollowUp[]
 
@@ -52,6 +75,7 @@ model Patient {
   @@index([patientNumber])
   @@index([createdAt])
   @@index([name])
+  @@index([tenantId])
 }
 
 /// Represents a clinical visit / encounter (EMR entry)
@@ -128,4 +152,22 @@ model FollowUp {
   @@index([patientId])
   @@index([followUpDate])
   @@index([status])
+}
+
+/// Tracks user actions for compliance and security audit trails.
+model AuditLog {
+  id         String   @id @default(uuid())
+  tenantId   String
+  userId     String
+  action     String   // CREATE, UPDATE, DELETE, LOGIN, etc.
+  entity     String   // Patient, Visit, FollowUp, etc.
+  entityId   String?
+  metadata   Json?    // Additional context
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([entity, entityId])
+  @@index([createdAt])
 }

@@ -1,9 +1,7 @@
-import { prisma } from '@/lib/db/prisma'
+import { getPatientTypes } from '@/services'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
-    const patientTypes = await prisma.patientType.findMany({
-        orderBy: { name: 'asc' },
-    })
+    const patientTypes = await getPatientTypes()
     return NextResponse.json(patientTypes)
 }

@@ -1,241 +1,115 @@
 # 🩺 Medi-Help — Clinic Management & EMR System
 
-**Medi-Help** is a full-stack Electronic Medical Record (EMR) and Clinic Management System built for doctors, receptionists, and clinic administrators. It handles the complete clinic workflow — from patient registration and clinical visit documentation to follow-up scheduling, billing, and analytics — in a single cohesive platform.
+**Medi-Help** is a production-grade, multi-tenant Electronic Medical Record (EMR) and Clinic Management System designed for healthcare providers, receptionists, and clinic administrators. It handles the end-to-end clinical and operational workflow — from patient registration and clinical EMR logging to follow-up scheduling, billing tracking, and system-wide analytics — all within a single unified application.
 
-Built with **Next.js 16 (App Router)**, **Prisma 7**, **PostgreSQL**, and **Ant Design**, the system uses React Server Components and Server Actions for a zero-API-overhead architecture. It features role-based access control, dark/light theme support, and a responsive design that works across desktop and mobile devices.
+Built on a modern stack using **Next.js 16 (App Router)**, **Prisma 7**, **PostgreSQL**, and **Ant Design** (styling powered by **Tailwind CSS**), the system leverages React Server Components (RSC) and Server Actions. This architecture eliminates the overhead of separate API layers, ensuring optimal performance, a secure server-centric state, and a highly responsive user experience.
 
 ---
 
 ## 📑 Table of Contents
 
-- [Features Overview](#-features-overview)
-- [Working Flow — How the Platform Works](#-working-flow--how-the-platform-works)
-- [Technical Architecture](#-technical-architecture)
-- [Project Structure & Module Guide](#-project-structure--module-guide)
-- [Database Schema](#-database-schema)
-- [Authentication & RBAC](#-authentication--rbac)
-- [API Routes](#-api-routes)
-- [UI Component Library](#-ui-component-library)
-- [Local Development Setup](#-local-development-setup)
-- [Database Seeding](#-database-seeding)
-- [Environment Variables](#-environment-variables)
-- [Tech Stack Summary](#-tech-stack-summary)
+1. [Features Overview](#-features-overview)
+2. [User Guide & Workflows](#-user-guide--workflows)
+3. [Technical Architecture](#-technical-architecture)
+4. [Project Directory Structure](#-project-directory-structure)
+5. [Service Layer (Business Logic)](#-service-layer-business-logic)
+6. [Repository Layer (Data Access)](#-repository-layer-data-access)
+7. [Role-Based Access Control (RBAC) & Permissions](#-role-based-access-control-rbac--permissions)
+8. [Multi-Tenancy & Data Isolation](#-multi-tenancy--data-isolation)
+9. [Database Schema & Indexes](#-database-schema--indexes)
+10. [Local Development & Seeding](#-local-development--seeding)
+11. [Environment Variables](#-environment-variables)
+12. [Tech Stack & Dependencies](#-tech-stack--dependencies)
+13. [Security & Data Integrity](#-security--data-integrity)
 
 ---
 
-## ✨ Features Overview
+## 🌟 Features Overview
 
-### 1. 🏥 Patient Management (`/patients`)
-- **Patient Registry** — Searchable, paginated list of all patients with type-ahead search by name, phone, or patient ID.
-- **Auto-generated Clinic IDs** — Sequential IDs in `CLINIC-XXXXX` format (e.g., `CLINIC-00001`) generated server-side.
-- **Comprehensive Demographics** — Name, phone, email, gender, date of birth, blood group, address.
-- **Medical History** — Free-text fields for allergies and chronic conditions, displayed with visual highlights.
-- **Patient Categorization** — Assign patients to customizable types (e.g., *Diabetic*, *Cardiac*, *Pediatric*, *Orthopedic*, *General*) for segmented analytics.
-- **Patient Profile** (`/patients/[id]`) — Full profile with demographics, medical info, visit summary stats, and complete visit timeline with vitals.
+### 1. Patient Management (`/patients`)
+*   **Centralized Patient Registry:** A paginated, searchable directory of all registered patients, allowing lookups by name, phone number, or patient ID.
+*   **Auto-generated Clinic IDs:** Every patient is assigned a unique, sequential ID formatted as `CLINIC-XXXXX` (e.g., `CLINIC-00001`), computed server-side during registration.
+*   **Comprehensive Demographics:** Fields to capture full name, telephone, email, gender, date of birth, blood group, and address.
+*   **Medical Profiles:** Rich-text fields capturing drug/food allergies and chronic conditions (e.g., Diabetes, Hypertension) highlighted on their patient profile.
+*   **Patient Categorization:** Grouping by medical profile (e.g., *Diabetic*, *Cardiac*, *Pediatric*, *Orthopedic*, *General*) to fuel segmented clinic analytics.
+*   **Patient Profile Dashboard (`/patients/[id]`):** A single view housing patient demographics, key statistics (visit count, last visit date, outstanding follow-ups), and a chronological, rich timeline of past clinical visits.
 
-### 2. 📋 Clinical Visit / EMR Entry (`/patients/[id]/visits/new`)
-The core clinical workflow for doctors during consultations:
-- **Vitals Capture** — Blood pressure (text, e.g. "120/80"), temperature (°F), pulse (bpm), height (m), weight (kg), and **auto-calculated BMI**.
-- **Risk Factor Assessment** — Lifestyle checkboxes (Non-Veg, Alcohol, Smoking) plus free-text fields for drug allergies and surgery history.
-- **Structured Clinical Notes**:
-  - Chief Complaint (required)
-  - History of Present Illness
-  - Physical Examination
-  - Provisional Diagnosis
-  - Investigations / Lab Tests
-  - Final Diagnosis
-- **Legacy Fields** — Symptoms, Diagnosis, Prescription, and Lab Tests fields for backward compatibility.
-- **Scheduling** — Setting a "Next Visit Date" automatically creates a follow-up reminder.
-- **Billing** — Consultation fee (₹) and payment mode (Cash / UPI / Card / Insurance) recorded per visit.
-- **Immutable Records** — Visit records are append-only; no update or delete is exposed to preserve medical audit integrity.
-- **PDF Download** (`/patients/[id]/visits/[visitId]`) — Generate a branded prescription-style PDF with patient info, vitals, clinical notes, and billing via `jsPDF`.
+### 2. Clinical Visit & EMR Entry (`/patients/[id]/visits/new`)
+A streamlined workspace built specifically for doctors during active consultations:
+*   **Vitals Tracking:** Records blood pressure (e.g., `120/80`), temperature (°F), pulse (bpm), weight (kg), and height (m) with an **auto-calculated Body Mass Index (BMI)**.
+*   **Lifestyle & Risk Factors:** Yes/No indicators for behavioral risk factors (Smoking, Alcohol, Non-Veg) alongside free-text fields for drug allergy notes and surgery histories.
+*   **Structured Clinical Notes:** Fields for Chief Complaint (required), History of Present Illness (HPI), Physical Examination, Provisional Diagnosis, Investigations (Lab/Imaging ordered), and Final Diagnosis.
+*   **Legacy Data Compatibility:** Fields for general Symptoms, Diagnosis, Prescription, and Lab Tests are kept to import historic records.
+*   **Prescription & Scheduling:** Directly link the next recommended follow-up date, which automatically generates a calendar reminder in the system.
+*   **Integrated Billing:** Records the consultation fee (in ₹) and the chosen payment mode (Cash, UPI, Card, or Insurance).
+*   **Immutable Records:** Once saved, clinical visits are permanently written to the ledger and cannot be edited or deleted, ensuring strict medical compliance.
+*   **PDF Generation (`/patients/[id]/visits/[visitId]`):** Renders a clean, print-friendly prescription layout. Users can instantly export or print PDF summaries containing patient details, vitals, clinical notes, and billing history.
 
-### 3. 📅 Follow-up Management (`/followups`)
-Automated patient retention and appointment tracking:
-- **Auto-Scheduling** — When a visit includes a "Next Visit Date", a follow-up record is automatically created with status `CONFIRMED` and method `WHATSAPP`.
-- **Tab-Based Views** — Today, Upcoming, Missed, and Completed tabs with live badge counts.
-- **Status Lifecycle** — `CONFIRMED` → `RESCHEDULED` / `VISITED` / `NO_RESPONSE` / `MISSED`.
-- **WhatsApp Integration** — Pre-generated reminder messages (appointment reminders and missed-appointment messages) with one-click WhatsApp Web links. Phone numbers are automatically cleaned and formatted with India country code (`91`).
-- **Quick Actions** — Mark as Visited, Reschedule to a new date, update status, all via Server Actions.
-- **Search** — Filter follow-ups by patient name, phone, or patient ID.
+### 3. Follow-up & Recall System (`/followups`)
+Designed to automate patient retention and monitor recovery progress:
+*   **Auto-Scheduling:** Setting a "Next Visit Date" during an EMR entry automatically schedules a follow-up with a `CONFIRMED` status.
+*   **Status-based Tabs:** Easily manage workflows using categorized tabs: *Today*, *Upcoming*, *Missed*, and *Completed*. Live badge counts show total tasks for each view.
+*   **Status Lifecycle:** Track patient interactions through statuses: `CONFIRMED` ➔ `VISITED` (completed), `RESCHEDULED`, `NO_RESPONSE`, or `MISSED`.
+*   **WhatsApp Web Integration:** One-click WhatsApp button pre-compiles personalized reminders based on patient status:
+    *   *Upcoming:* "Hello [Name], this is a reminder from MediHelp Clinic for your appointment on [Date]..."
+    *   *Missed:* "Hello [Name], we noticed you missed your appointment on [Date]..."
+*   **Phone Number Normalization:** Automatically strips spaces, formatting characters, and country prefix duplication to guarantee valid `wa.me/91XXXXXXXXXX` (India) endpoints.
 
-### 4. 💰 Billing & Revenue (`/billing`)
-- **Revenue KPIs** — Today's revenue, monthly revenue, total revenue, and average fee per visit.
-- **Payment Mode Breakdown** — Aggregated revenue by Cash, UPI, Card, and Insurance for the current month.
-- **Revenue Trend Charts** — 6-month revenue trend line (Recharts).
-- **Revenue by Patient Type** — Pie chart showing revenue distribution across patient categories.
-- **Today's Revenue Detail** — Itemized table of today's billable visits with patient name, time, fee, and payment mode.
+### 4. Billing & Financials (`/billing`)
+*   **Revenue at a Glance:** Live counter showcasing Today's Revenue, Monthly Revenue, YTD Total Revenue, and Average Revenue per Visit.
+*   **Payment Mode Analysis:** Visual distribution chart showcasing share of Cash, UPI, Card, and Insurance payments.
+*   **Revenue Growth Trends:** An interactive Recharts line chart illustrating revenue development over the trailing 6 months.
+*   **Revenue by Patient Type:** Breakdowns to analyze which patient segments (e.g., Diabetic, General, Pediatric) contribute most.
+*   **Detailed Transaction Log:** Real-time ledger listing today's billable visits, showing patient names, timestamps, fees, and payment modes.
 
-### 5. 📊 Dashboard (`/dashboard`)
-Real-time clinic intelligence hub:
-- **9 KPI Cards** — Total patients, new patients this month, repeat patient %, today's appointments, today's visits, upcoming follow-ups, missed follow-ups, monthly revenue, and top patient type.
-- **3 Interactive Charts** (Recharts):
-  - Visit trend (6-month bar chart)
-  - Revenue trend (6-month area chart)
-  - Patient type distribution (pie chart)
-- **Recent Visits Feed** — Last 5 visits with patient name, ID, date, fee, and diagnosis.
-
-### 6. 📈 Analytics (`/analytics`)
-Deep clinic performance insights:
-- **Follow-up Compliance KPIs** — Total follow-ups, attended, missed, and compliance rate percentage.
-- **5 Interactive Charts** (Recharts):
-  - Patient growth (12-month line chart of new registrations)
-  - Disease distribution (pie chart by patient type, including uncategorized)
-  - Visit frequency distribution (bar chart: 1, 2, 3, 4, 5+ visits per patient)
-  - Revenue trend (12-month bar chart)
-  - Revenue by patient type (bar chart)
-
-### 7. 🌙 Dark Mode & Responsive Design
-- **Theme Toggle** — System, Light, and Dark modes via `next-themes`.
-- **Custom Design System** — CSS variables for primary (teal), secondary, success, warning, danger colors with distinct light/dark palettes.
-- **Responsive Sidebar** — Auto-collapsing on desktop (hover to expand), mobile drawer with overlay.
-- **Height-Responsive Sidebar** — Compact layout on short screens (laptops < 800px height).
+### 5. Main Dashboard (`/dashboard`)
+*   **High-Level KPI Panel:** Displays 9 live counters (Total Patients, Monthly New Registrations, % Repeat Patients, Active Appointments, Today's Visits, Pending Followups, Missed Followups, Monthly Revenue, and dominant Patient Category).
+*   **Visual Charts:** Renders interactive charts detailing the 6-month visit volume trend, 6-month revenue trend, and division of current patient types.
+*   **Recent Visits Feed:** Quick-reference log of the last 5 registered clinical visits.
 
 ---
 
-## 🔄 Working Flow — How the Platform Works
+## 🔄 User Guide & Workflows
 
-Below is a step-by-step walkthrough of the complete clinic workflow with realistic examples.
+Here is how different staff roles typically interact with the system throughout a patient’s journey.
 
-### Step 1: Login & Authentication
+### 1. Receptionist: Checking in a New Patient
+1. Open the sidebar and navigate to **Patients**.
+2. Click the **+ New Patient** button on the top right.
+3. Fill in the patient's demographics: Full Name, 10-digit Phone Number (crucial for WhatsApp reminders), Email (optional), Date of Birth, Gender, Blood Group, and select the **Patient Type** (e.g. *Diabetic*).
+4. Enter any known allergies (e.g., "Penicillin") or chronic conditions.
+5. Click **Register Patient**. The system registers the patient, auto-generates a unique ID (e.g., `CLINIC-00014`), and redirects you to the new patient's profile page.
 
-A staff member opens the app and is redirected to `/login`.
+### 2. Doctor: Conducting a Consultation & EMR Entry
+1. From the patient's profile page (or by searching in the **Patients** directory), click the **+ New Visit** button.
+2. Under **Vitals**, enter the patient's vitals. Note that as you enter *Height* (in meters, e.g. `1.75`) and *Weight* (in kg, e.g. `70`), the **BMI** is auto-calculated dynamically (e.g., `22.86`).
+3. Under **Risk Factors**, check any lifestyle habits (e.g., check *Smoking* if they smoke) and list any drug allergies.
+4. Under **Clinical Notes**, fill out the diagnosis details:
+    *   **Chief Complaint:** (Required) *e.g., High fever & cough for 4 days.*
+    *   *History of Present Illness*, *Physical Examination*, *Provisional Diagnosis*, *Investigations*, and *Final Diagnosis*.
+5. Under **Scheduling & Billing**:
+    *   To set a return appointment, select a **Next Visit Date** (e.g., 2 weeks from now). This will automatically create an active follow-up reminder.
+    *   Enter the **Consultation Fee** (e.g., `₹500`) and the **Payment Mode** used (e.g., `UPI`).
+6. Click **Save Visit Record**. The record is locked as permanent, and you are redirected to the patient's profile, where the new entry appears at the top of the history timeline.
+7. Click **View Details** next to the visit, and click **📥 Download PDF** to save or print a clean, structured prescription.
 
-> **Example**: Dr. Dibyanshu logs in with `doctor@medihelp.com` / `doctor123`.
-
-- The system authenticates via NextAuth.js with bcrypt password comparison.
-- A JWT token is issued containing `user.id` and `user.role` (e.g., `DOCTOR`).
-- The user is redirected to `/dashboard`.
-
-### Step 2: Dashboard Overview
-
-The doctor sees the **Dashboard** with real-time clinic metrics:
-
-> **What the doctor sees**:
-> - Total Patients: **12** | New This Month: **4** | Repeat Patient %: **67%**
-> - Today's Appointments: **3** | Monthly Revenue: **₹5,200**
-> - A 6-month visit trend chart showing seasonal patterns.
-> - Recent visits: "Rajesh Kumar — Diabetes Type 2 - Improving — ₹400"
-
-### Step 3: Register a New Patient
-
-The receptionist navigates to `/patients` → clicks **"+ New Patient"**.
-
-> **Example**: Registering a new patient **Priya Gupta**:
-> - Name: `Priya Gupta` | Phone: `9876543230` | Gender: `FEMALE`
-> - Date of Birth: `1992-04-15` | Blood Group: `O+`
-> - Allergies: `Penicillin` | Chronic Conditions: `None`
-> - Patient Type: `General`
->
-> On submit, the system auto-generates ID **`CLINIC-00013`** and redirects to the patient profile.
-
-**How it works internally**:
-1. The `createPatient` Server Action runs on the server.
-2. `generatePatientNumber()` counts existing patients (`12`) and generates `CLINIC-00013`.
-3. A `Patient` record is created in PostgreSQL via Prisma.
-4. `revalidatePath('/patients')` ensures the patient list is fresh.
-
-### Step 4: Record a Clinical Visit (EMR Entry)
-
-From Priya's profile, the doctor clicks **"+ New Visit"** → lands on `/patients/[id]/visits/new`.
-
-> **Example Visit**:
->
-> **Vitals**:
-> - BP: `120/80` | Temperature: `100.4°F` | Pulse: `88 bpm`
-> - Height: `1.62 m` | Weight: `58 kg` → BMI: **22.10** (auto-calculated)
->
-> **Risk Factors**: Non-Veg ✓ | Alcohol ✗ | Smoking ✗
->
-> **Clinical Notes**:
-> - Chief Complaint: `Fever and body aches for 3 days`
-> - History of Present Illness: `Patient reports intermittent fever with chills, body pain, and mild headache since Monday`
-> - Examination: `Throat mildly congested, no lymphadenopathy`
-> - Provisional Diagnosis: `Viral fever`
-> - Investigations: `CBC, Dengue NS1`
-> - Final Diagnosis: `Acute viral upper respiratory infection`
->
-> **Scheduling & Billing**:
-> - Next Visit Date: `2026-06-06` | Fee: `₹400` | Payment: `UPI`
-
-**What happens on submit**:
-1. The `createVisit` Server Action validates inputs (height between 0.5–2.5m, weight between 1–300kg).
-2. A `Visit` record is created with all clinical data, vitals, and billing info.
-3. **Because a Next Visit Date was set**, a `FollowUp` record is automatically created:
-   - `followUpDate: 2026-06-06`, `method: WHATSAPP`, `status: CONFIRMED`
-   - `notes: "Auto-scheduled from visit on 5/30/2026"`
-4. `revalidatePath` is called for `/patients/[id]`, `/patients`, `/followups`, and `/dashboard` to refresh all related pages.
-5. The doctor is redirected back to Priya's patient profile showing the new visit in the timeline.
-
-### Step 5: View Visit Detail & Download PDF
-
-From the patient profile, clicking **"View Details →"** on any visit leads to `/patients/[id]/visits/[visitId]`.
-
-> The doctor clicks **"📥 Download PDF"** to generate a branded prescription PDF:
-> - Header: "MediHelp Clinic" in teal
-> - Patient info: Name, ID, phone, type, age, gender, blood group, allergies
-> - Visit details: Date, vitals, all clinical notes
-> - Billing: ₹400 via UPI
-> - Next appointment: Friday, June 6, 2026
-> - Footer: "Computer-generated document — no signature required"
-
-### Step 6: Manage Follow-ups
-
-The receptionist navigates to `/followups`:
-
-> **Upcoming Tab**: Shows Priya Gupta's follow-up for June 6 with status `CONFIRMED`.
->
-> **Pre-generated WhatsApp message**:
-> ```
-> Hello Priya Gupta, this is a reminder from MediHelp Clinic for your appointment
-> scheduled on Friday, 6 June 2026. Kindly confirm your visit. Thank you. 🙏
-> ```
->
-> The receptionist clicks **"📲 WhatsApp"** → Opens `wa.me/919876543230?text=...` in a new tab.
-
-**If Priya doesn't show up** (date passes without status update):
-- The follow-up appears in the **Missed** tab.
-- The message changes to:
-  ```
-  Hello Priya Gupta, we noticed you missed your appointment on Friday, 6 June 2026
-  at MediHelp Clinic. Your health is our priority. Please reply to reschedule. 🙏
-  ```
-
-**Actions available**:
-- **Mark as Visited** → Status changes to `VISITED`
-- **Reschedule** → Prompts for new date, status changes to `RESCHEDULED`
-- **Update Status** → Set to `NO_RESPONSE`, `MISSED`, etc.
-
-### Step 7: Monitor Revenue (Billing)
-
-The doctor checks `/billing` at end of day:
-
-> **Today's Revenue**: ₹2,100 (5 visits) | **Monthly Revenue**: ₹18,400
->
-> Payment breakdown this month: Cash 45%, UPI 40%, Card 10%, Insurance 5%
->
-> Today's detail table:
-> | Patient | ID | Time | Fee | Mode |
-> |---|---|---|---|---|
-> | Priya Gupta | CLINIC-00013 | 10:30 AM | ₹400 | UPI |
-> | Rajesh Kumar | CLINIC-00001 | 11:15 AM | ₹500 | Cash |
-> | ... | ... | ... | ... | ... |
-
-### Step 8: Analyze Clinic Performance (Analytics)
-
-The doctor reviews `/analytics` for strategic insights:
-
-> **Follow-up Compliance**: 72% (54 of 75 follow-ups resulted in visits)
->
-> **Patient Growth Chart**: Steady increase from 5 patients/month to 12/month over the past year.
->
-> **Disease Distribution**: General 40%, Diabetic 25%, Cardiac 15%, Pediatric 12%, Orthopedic 8%
->
-> **Visit Frequency**: 35% of patients have 1 visit, 25% have 2 visits, 20% have 3+
+### 3. Receptionist: Managing Follow-ups
+1. Navigate to the **Follow-ups** tab in the sidebar.
+2. Under the **Today** or **Upcoming** tabs, you will see a list of scheduled return visits.
+3. Click the **📲 WhatsApp** button next to a patient. This will launch a new browser tab with a pre-formatted message addressed to their phone number. Send the message to remind them of their appointment.
+4. If a patient visits the clinic for their follow-up, click the green **✓ Mark Visited** button next to their name. The status will update to `VISITED` and move the record to the **Completed** tab.
+5. If a patient requests to reschedule, click **📅 Reschedule**, enter the new date, and click **OK**.
+6. If the day of their appointment passes and no action was taken, the patient will automatically move to the **Missed** tab, where the pre-formatted WhatsApp text changes to a polite re-engagement prompt.
 
 ---
 
 ## 🏗 Technical Architecture
+
+Medi-Help employs a layered architecture that clearly decouples concerns:
+*   **Presentation Layer (Next.js Pages & Components):** Handles routing, layout, and client-side interactions. Uses React Server Components (RSC) to render pages server-side for maximum performance, and Client Components where user-interactivity (like forms, data visualizations, and buttons) is needed.
+*   **Service Layer (`services/`):** Contains all core business logic, validation rules, external integrations, and orchestrates operations between multiple repositories.
+*   **Repository Layer (`repositories/`):** Isolates the data access logic. Contains raw Database queries. No page or service directly queries the database; they all utilize these repositories.
+*   **Database & ORM (`prisma/`):** Uses Prisma 7 ORM with a dedicated native PostgreSQL connection pool for database operations.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -243,9 +117,10 @@ The doctor reviews `/analytics` for strategic insights:
 │  React 19 (Client Components) + Server Components       │
 └─────────────────────┬───────────────────────────────────┘
                       │ HTTP / RSC Protocol
-┌─────────────────────▼───────────────────────────────────┐
-│              Next.js 16 App Router                       │
-│                                                          │
+                      ▼
+┌─────────────────────────────────────────────────────────┐
+│              Next.js 16 App Router                      │
+│                                                         │
 │  ┌─────────────┐  ┌──────────────┐  ┌────────────────┐  │
 │  │ Server      │  │ Server       │  │ API Routes     │  │
 │  │ Components  │  │ Actions      │  │ (/api/...)     │  │
@@ -253,453 +128,373 @@ The doctor reviews `/analytics` for strategic insights:
 │  └──────┬──────┘  └──────┬───────┘  └──────┬─────────┘  │
 │         │                │                  │            │
 │  ┌──────▼──────────────▼──────────────────▼──────────┐  │
-│  │           Service Layer (lib/services/)            │  │
-│  │   dashboardService.ts  │  analyticsService.ts      │  │
+│  │           Service Layer (services/)                │  │
+│  │   Handles business logic & coordinates Repositories│  │
+│  └──────────────────────┬────────────────────────────┘  │
+│                         │                                │
+│  ┌──────────────────────▼────────────────────────────┐  │
+│  │         Repository Layer (repositories/)          │  │
+│  │   Encapsulates all Prisma / Database operations   │  │
 │  └──────────────────────┬────────────────────────────┘  │
 │                         │                                │
 │  ┌──────────────────────▼────────────────────────────┐  │
 │  │     Prisma 7 ORM  (lib/db/prisma.ts)              │  │
 │  │     PrismaPg Adapter + Connection Pooling (pg)     │  │
-│  └──────────────────────┬────────────────────────────┘  │
-│                         │                                │
-│  ┌──────────────────────▼────────────────────────────┐  │
-│  │     NextAuth.js 4  (lib/authOptions.ts)           │  │
-│  │     JWT Strategy + RBAC (DOCTOR/RECEPTIONIST)      │  │
 │  └───────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────┘
                       │
 ┌─────────────────────▼───────────────────────────────────┐
 │                  PostgreSQL Database                      │
-│    User │ PatientType │ Patient │ Visit │ FollowUp       │
+│    User │ Tenant │ Patient │ Visit │ FollowUp │ ...     │
 └─────────────────────────────────────────────────────────┘
 ```
 
-### Key Architectural Decisions
-
-| Decision | Rationale |
-|---|---|
-| **Server Actions over API routes** | Mutations (create patient, create visit, update follow-up) use Server Actions for type-safe, co-located server-side logic without separate API endpoints. |
-| **Server Components for data fetching** | All pages (`dashboard`, `patients`, `billing`, `analytics`, `followups`) are async Server Components that fetch data directly from the database. No client-side data fetching for page loads. |
-| **Client Components for interactivity** | Forms (`NewVisitPage`, `LoginPage`), charts (`DashboardCharts`, `BillingCharts`, `AnalyticsCharts`), sidebar, and theme toggle are `'use client'` components. |
-| **`Promise.all` parallel queries** | Dashboard and billing pages run 10–12 database queries in parallel for fast page loads. |
-| **Prisma PrismaPg adapter** | Uses `@prisma/adapter-pg` with a `pg` connection pool for direct PostgreSQL wire protocol access. Singleton pattern prevents connection leaks in development. |
-| **Immutable visit records** | No `updateVisit` or `deleteVisit` Server Actions exist. Visit records are append-only to preserve clinical audit trails. |
-| **Auto-generated patient numbers** | `CLINIC-XXXXX` IDs are generated server-side from `patient.count() + 1` — never exposed to client input. |
-
 ---
 
-## 📂 Project Structure & Module Guide
+## 📂 Project Directory Structure
+
+Below is an overview of the most critical directories and files:
 
 ```
-medi-help/
-├── app/                          # Next.js App Router
-│   ├── layout.tsx                # Root layout (Providers + AppLayout)
-│   ├── page.tsx                  # Root redirect → /dashboard
-│   ├── providers.tsx             # SessionProvider + ThemeProvider (client)
-│   ├── globals.css               # Design system (CSS variables, dark mode, animations)
-│   │
-│   ├── login/
-│   │   └── page.tsx              # Login page (client) — email/password form
-│   │
-│   ├── dashboard/
-│   │   ├── page.tsx              # Dashboard (server) — KPIs + recent visits
-│   │   └── DashboardCharts.tsx   # Charts (client) — visit trend, revenue, patient types
-│   │
-│   ├── patients/
-│   │   ├── page.tsx              # Patient list (server) — search, paginate, filter
-│   │   ├── actions.ts            # Server Actions: createPatient, updatePatient, getPatientTypes
-│   │   ├── new/
-│   │   │   └── page.tsx          # New patient form (client)
-│   │   └── [id]/
-│   │       ├── page.tsx          # Patient profile (server) — demographics + visit timeline
-│   │       └── visits/
-│   │           ├── actions.ts    # Server Action: createVisit (+ auto follow-up)
-│   │           ├── new/
-│   │           │   └── page.tsx  # New visit/EMR form (client) — vitals, clinical, billing
-│   │           └── [visitId]/
-│   │               ├── page.tsx              # Visit detail (server)
-│   │               └── VisitDownloadButton.tsx # PDF generation (client, jsPDF)
-│   │
-│   ├── followups/
-│   │   ├── page.tsx              # Follow-ups list (server) — tabs, search, pagination
-│   │   ├── actions.ts            # Server Actions: reschedule, markAsVisited, updateStatus
-│   │   └── FollowUpActions.tsx   # Action buttons (client)
-│   │
-│   ├── billing/
-│   │   ├── page.tsx              # Billing page (server) — revenue KPIs + detail table
-│   │   └── BillingCharts.tsx     # Revenue charts (client)
-│   │
-│   ├── analytics/
-│   │   ├── page.tsx              # Analytics page (server) — compliance KPIs
-│   │   └── AnalyticsCharts.tsx   # Analytics charts (client) — 5 chart types
-│   │
-│   ├── api/
-│   │   ├── auth/[...nextauth]/   # NextAuth catch-all route
-│   │   ├── patients/[id]/
-│   │   │   └── route.ts          # GET /api/patients/:id — patient lookup (used by visit form)
-│   │   └── patient-types/
-│   │       └── route.ts          # GET /api/patient-types — list types (used by forms)
-│   │
-│   └── components/ui/            # Reusable UI components
-│       ├── StatCard.tsx           # KPI metric cards with icon, value, subtitle, link
-│       ├── Badge.tsx              # Status badges (default, secondary, success, danger, warning)
-│       ├── Card.tsx               # Generic card wrapper
-│       ├── Pagination.tsx         # Page navigation controls
-│       ├── Search.tsx             # Search input with URL query param sync
-│       ├── Filter.tsx             # Filter dropdown
-│       ├── FilterPopover.tsx      # Advanced filter popover
-│       ├── DashboardFilter.tsx    # Dashboard-specific filter controls
-│       ├── DateRangeFilter.tsx    # Date range preset selector
-│       ├── ActiveFilters.tsx      # Active filter tag display
-│       ├── ExportButton.tsx       # Excel/PDF export trigger (client)
-│       ├── ClientTooltip.tsx      # Recharts tooltip wrapper
-│       └── ThemeToggle.tsx        # Dark/light/system theme toggle
-│
-├── components/                   # Shared layout components
-│   ├── AppLayout.tsx             # Main layout — sidebar + content area (client)
-│   ├── Sidebar.tsx               # Navigation sidebar with groups, user profile, sign out (client)
-│   ├── Navbar.tsx                # Top navigation bar (currently unused)
-│   ├── WhatsAppActions.tsx       # WhatsApp link + copy button (client)
-│   ├── copyButton.tsx            # Generic clipboard copy button
-│   └── analytics/                # GST analytics components (from prior system)
-│       ├── GstLeakageList.tsx
-│       ├── GstRateMixChart.tsx
-│       └── GstTrendChart.tsx
-│
-├── lib/                          # Core business logic & utilities
-│   ├── authOptions.ts            # NextAuth configuration (Credentials provider, JWT callbacks)
-│   ├── utils.ts                  # cn() helper (clsx + tailwind-merge)
-│   ├── auth/
-│   │   └── requireRole.ts        # RBAC guard: requireRole(['DOCTOR']), hasRole('ADMIN')
-│   ├── db/
-│   │   └── prisma.ts             # Prisma client singleton (PrismaPg adapter, connection pool)
-│   ├── services/
-│   │   ├── dashboardService.ts   # getDashboardData() — 12 parallel queries for KPIs & charts
-│   │   └── analyticsService.ts   # 6 analytics functions: growth, distribution, frequency, compliance, revenue
-│   ├── collections/
-│   │   └── messageTemplates.ts   # WhatsApp message generators (reminder, missed, health check)
-│   ├── constants/
-│   │   └── colors.ts             # Chart palettes and semantic color tokens
-│   └── utils/
-│       └── date.ts               # getNextNDays(), getDateRangeFromPreset() (7 presets)
-│
-├── types/
-│   └── next-auth.d.ts            # NextAuth type augmentation (adds id, role to Session & JWT)
-│
-├── prisma/
-│   ├── schema.prisma             # Database schema (5 models, 11 indexes)
-│   └── seed.ts                   # Seed script — 2 users, 5 types, 12 patients, 11 visits, follow-ups
-│
-├── prisma.config.ts              # Prisma config (datasource URL, seed command)
-├── next.config.ts                # Next.js config
-├── tsconfig.json                 # TypeScript config
-├── package.json                  # Dependencies & scripts
-├── password.js                   # Utility: bcrypt hash generator for manual password creation
-└── .gitignore                    # Git ignore rules
+├── app/                            # Next.js App Router root
+│   ├── layout.tsx                  # Global HTML wrapper & Font setup
+│   ├── providers.tsx               # Auth & Theme context providers
+│   ├── (public)/                   # Routes accessible without authentication
+│   │   ├── login/                  # User login page
+│   │   ├── signup/                 # Register account page (placeholder)
+│   │   └── forgot-password/        # Password reset (placeholder)
+│   ├── (authenticated)/            # Protected routes requiring authentication
+│   │   ├── layout.tsx              # App shell containing the responsive sidebar
+│   │   ├── dashboard/              # Home dashboard page & client charts
+│   │   ├── patients/               # Patient directory & registration
+│   │   │   ├── [id]/               # Patient profile page & details
+│   │   │   │   └── visits/         # EMR entries, new visit creation & PDF exports
+│   │   │   └── actions.ts          # Server actions for creating/updating patients
+│   │   ├── followups/              # Follow-up center & appointment management
+│   │   │   └── actions.ts          # Server actions to update follow-ups
+│   │   ├── billing/                # Financial ledger & revenue charts
+│   │   └── analytics/              # Performance reports & clinical analytics
+│   └── api/                        # REST API endpoints
+│       ├── auth/                   # NextAuth.js endpoints
+│       ├── patient-types/          # Endpoint to fetch types for dropdowns
+│       └── patients/[id]/          # Endpoint to fetch a patient by ID
+├── components/                     # Reusable UI components
+│   ├── charts/                     # Recharts wrappers for data visualization
+│   ├── followups/                  # Specialized follow-up UI widgets
+│   ├── layouts/                    # Navigation and core layout components (e.g. Sidebar)
+│   └── ui/                         # Atomic components (cards, badges, search bars, etc.)
+├── context/                        # Global React contexts
+│   └── AuthContext.tsx             # Exposes session, user details, and client-side permissions
+├── lib/                            # Core infrastructural modules
+│   ├── auth/                       # Authentication guards & middlewares
+│   │   └── requireRole.ts          # Server-side role protection helper
+│   ├── db/                         # Database clients
+│   │   └── prisma.ts               # Prisma client singleton using pg connection pool
+│   ├── collections/                # Reusable static configs / templates
+│   │   └── messageTemplates.ts     # Pre-formatted SMS/WhatsApp text builders
+│   ├── constants/                  # Unified constants
+│   ├── utils/                      # Helper utilities (dates, string formatting, etc.)
+│   ├── permissions.ts              # Core Role-Based Access Control config
+│   ├── permissions.server.ts       # Server-side permission enforcement helper
+│   └── validations.ts              # Common validation schemas (Zod or custom)
+├── modules/                        # Domain-specific Types, Constants, and Helpers
+│   ├── auth/                       # Types and constants for authentication
+│   ├── patient/                    # Types and constants for patients
+│   ├── visit/                      # Types and constants for EMR visits
+│   ├── followup/                   # Types and constants for followups
+│   ├── billing/                    # Financial domain-specific rules
+│   └── user/                       # User management constants & types
+├── services/                       # Application Services (Business Logic layer)
+├── repositories/                   # Data Repositories (Data Access layer)
+├── prisma/                         # Database schema & migrations
+│   ├── schema.prisma               # Prisma schema definition
+│   └── seed.ts                   # Pre-populates database with demo data
+└── config files                    # next.config.ts, tsconfig.json, tailwind.config...
 ```
 
 ---
 
-## 🗄 Database Schema
+## ⚙️ Service Layer (Business Logic)
 
-5 models with 11 indexed fields for optimized querying:
+Located in `/services`, this layer houses all the core business logic of the application. Services interact with the data layer via Repositories and are designed to be independent of the presentation framework (Next.js).
 
-```
-┌──────────────┐       ┌───────────────┐
-│    User      │       │  PatientType  │
-├──────────────┤       ├───────────────┤
-│ id (UUID)    │       │ id (UUID)     │
-│ name         │       │ name (unique) │
-│ email (uniq) │       │ description?  │
-│ password     │       │ createdAt     │
-│ role         │       └──────┬────────┘
-│ createdAt    │              │ 1:N
-└──────────────┘              │
-                       ┌──────▼────────┐
-                       │   Patient     │
-                       ├───────────────┤
-                       │ id (UUID)     │
-                       │ patientNumber │ ← auto: CLINIC-XXXXX
-                       │ name          │
-                       │ phone  [idx]  │
-                       │ email?        │
-                       │ gender?       │
-                       │ dateOfBirth?  │
-                       │ bloodGroup?   │
-                       │ allergies?    │
-                       │ chronicCond.? │
-                       │ address?      │
-                       │ patientTypeId?│
-                       │ createdAt[idx]│
-                       │ updatedAt     │
-                       └──┬─────────┬──┘
-                     1:N  │         │  1:N
-              ┌───────────▼──┐   ┌──▼───────────┐
-              │    Visit     │   │  FollowUp    │
-              ├──────────────┤   ├──────────────┤
-              │ id (UUID)    │   │ id (UUID)    │
-              │ patientId[ix]│   │ patientId[ix]│
-              │ visitDate[ix]│   │ visitId?     │
-              │ bp?          │   │ followUpDt[i]│
-              │ temperature? │   │ method       │ ← CALL|WHATSAPP|SMS|VISIT
-              │ pulse?       │   │ status  [idx]│ ← CONFIRMED|NO_RESPONSE|
-              │ weight?      │   │ notes?       │   RESCHEDULED|VISITED|MISSED
-              │ height?      │   │ nextFollowUp?│
-              │ bmi?         │   │ createdAt    │
-              │ isNonVeg?    │   │ updatedAt    │
-              │ alcohol?     │   └──────────────┘
-              │ smoking?     │
-              │ drugAllergy? │
-              │ surgeryHist? │
-              │ chiefCompl.? │
-              │ historyPI?   │
-              │ examination? │
-              │ provDiag?    │
-              │ investig.?   │
-              │ finalDiag?   │
-              │ symptoms?    │  ← legacy
-              │ diagnosis?   │  ← legacy
-              │ prescription?│
-              │ labTests?    │  ← legacy
-              │ nextVisitDt? │[ix]
-              │ fee?         │
-              │ paymentMode? │ ← CASH|UPI|CARD|INSURANCE
-              │ notes?       │
-              │ createdAt    │
-              └──────────────┘
-```
+*   **`auth.service.ts`**
+    *   **Purpose:** Manages user authentication and account creation.
+    *   **Key Functions:**
+        *   `validateCredentials(email, password)`: Verifies if a user exists and checks password authenticity using `bcrypt.compare`.
+        *   `createUser(data)`: Hashes passwords with `bcrypt` (10 rounds) and persists new user accounts.
+        *   `getUserById(id)`: Fetches user details by ID.
 
-### Key Relationships
-- `PatientType` → `Patient` (1:N) — Each patient can belong to one category.
-- `Patient` → `Visit` (1:N) — A patient has many visits; visits are immutable records.
-- `Patient` → `FollowUp` (1:N) — A patient has many follow-ups.
-- `Visit` → `FollowUp` (1:N optional) — A follow-up may be linked to the visit that spawned it.
+*   **`patient.service.ts`**
+    *   **Purpose:** Handles patient lifecycle management.
+    *   **Key Functions:**
+        *   `createPatient(prevState, formData)`: Validates form data, generates a sequential, unique, and concurrency-safe clinic ID (`CLINIC-XXXXX`), and registers the patient.
+        *   `updatePatient(id, prevState, formData)`: Updates a patient's contact, demographic, and medical details.
+        *   `getPatientProfile(id)`: Aggregates patient data, including demographics, total visits, last visit, and full visit history.
 
-### Indexes
-Performance-critical indexes on: `Patient.phone`, `Patient.patientNumber`, `Patient.createdAt`, `Patient.name`, `Visit.patientId`, `Visit.visitDate`, `Visit.nextVisitDate`, `FollowUp.patientId`, `FollowUp.followUpDate`, `FollowUp.status`.
+*   **`visit.service.ts`**
+    *   **Purpose:** Manages EMR clinical records.
+    *   **Key Functions:**
+        *   `createVisit(prevState, formData)`: Validates vitals (height and weight constraints), calculates BMI, saves the new visit, and—if a "Next Visit Date" is set—calls the `followup` repository to schedule a follow-up. Invokes cache revalidation.
+        *   `getVisitDetail(id)`: Retrieves a specific visit record, including its associated patient.
+
+*   **`followup.service.ts`**
+    *   **Purpose:** Coordinates the follow-up and notification workflow.
+    *   **Key Functions:**
+        *   `listFollowUps(filters)`: Queries follow-up reminders based on selected tab (Today, Upcoming, Missed, Completed), search query, and pagination.
+        *   `updateFollowUpStatus(id, status, notes)`: Updates status (e.g. `NO_RESPONSE`, `MISSED`) and appends internal notes.
+        *   `markAsVisited(id)`: Transition a follow-up status to `VISITED`.
+        *   `rescheduleFollowUp(id, newDate)`: postphones an appointment, updating the date and setting the status to `RESCHEDULED`.
+
+*   **`billing.service.ts`**
+    *   **Purpose:** Aggregates and calculates financial reports.
+    *   **Key Functions:**
+        *   `getBillingOverview()`: Returns sum and count statistics for today's, monthly, and overall revenue, as well as a list of today's paid visits. Provides monthly trend and patient-type revenue share.
+
+*   **`analytics.service.ts`**
+    *   **Purpose:** Supplies data to complex charts.
+    *   **Key Functions:**
+        *   `getPatientGrowth()`, `getDiseaseDistribution()`, `getVisitFrequencyDistribution()`, `getFollowUpCompliance()`: Calculate metrics for various analytical charts (e.g., how many follow-ups were met vs missed, patient acquisition rates over 12 months, etc.).
+
+*   **`audit.service.ts`**
+    *   **Purpose:** Registers security and compliance logs in a non-blocking way.
+    *   **Key Functions:**
+        *   `logAuditEvent(data)`: Creates an entry in the database. Operates in a try-catch block to prevent breaking the core user experience if a logging failure occurs (fire-and-forget).
+
+*   **`subscription.service.ts`**
+    *   **Purpose:** Governs feature toggles and record ceilings based on tenant plans (e.g., limiting the maximum number of patients on a free tier).
 
 ---
 
-## 🔐 Authentication & RBAC
+## 🗄️ Repository Layer (Data Access)
 
-### Auth Flow
-1. **Login** — User submits email/password to NextAuth's `CredentialsProvider`.
-2. **Verification** — Server looks up user by email, compares password hash using `bcrypt`.
-3. **JWT Token** — On success, a JWT is created with `id` and `role` via the `jwt` callback.
-4. **Session** — The `session` callback injects `id` and `role` into `session.user`.
-5. **Protection** — Every page calls `getServerSession()` and redirects to `/login` if unauthenticated.
+Located in `/repositories`, this layer is responsible for performing raw database operations via the Prisma client. Separating the repositories from services ensures that if the database client changes, only the repository layer needs modification.
 
-### Roles
-| Role | Permissions |
-|---|---|
-| `DOCTOR` | Full access to all modules |
-| `RECEPTIONIST` | Patient management, follow-ups (limited clinical access) |
-| `ADMIN` | Reserved for future use |
+*   **`base.repository.ts`:** An abstract class providing common CRUD operations (find, count, create, update, delete) to other repositories for code reuse.
+*   **`user.repository.ts`:** Locates users by ID or unique email.
+*   **`patient.repository.ts`:** Fetches, filters, searches, and counts patients. Handles atomic creation of patient profiles.
+*   **`patient-type.repository.ts`:** Interacts with the categories of patients (Diabetic, Cardiac, etc.).
+*   **`visit.repository.ts`:** Manages visit creations, retrieval by ID, and complex sub-aggregations.
+*   **`followup.repository.ts`:** Implements complex queries for follow-ups (filtering by dates, search queries, status-matching, and pagination).
+*   **`tenant.repository.ts`:** Resolves tenant data based on domain slugs and generates new, unique tenant slugs.
+*   **`audit-log.repository.ts`:** Writes audit logs to the database.
 
-### Role Guard Usage
+---
+
+## 🔐 Role-Based Access Control (RBAC) & Permissions
+
+Medi-Help has a multi-tier permission-based system that allows you to easily restrict access to specific pages, APIs, and Server Actions. 
+
+### Core Concepts
+
+*   **Roles:** We support three user roles:
+    *   `DOCTOR`: Full access to all features (clinical, administrative, billing).
+    *   `RECEPTIONIST`: Limited access. Can manage patients and follow-ups. No access to write clinical files (though they can see patient visit history summaries).
+    *   `ADMIN`: Administrative access (reserved for future use).
+*   **Permissions:** Granular permissions represent specific actions (e.g., `PATIENT_READ`, `VISIT_CREATE`, `BILLING_READ`, `USER_MANAGE`).
+
+### Where the Files are Located
+
+1.  **Definitions and Mappings:** [`lib/permissions.ts`](file:///home/dibyanshu/My-Projects/Medi-Help/lib/permissions.ts)  
+    Contains the `Permission` enum and the `ROLE_PERMISSIONS` dictionary, which maps each role to an array of allowed permissions.
+2.  **Server Guard:** [`lib/permissions.server.ts`](file:///home/dibyanshu/My-Projects/Medi-Help/lib/permissions.server.ts)  
+    Contains `requirePermission(permission: Permission)`, which is used inside **Server Actions** or **API routes (Route Handlers)** to block unauthorized requests.
+3.  **Role Guard (Coarse):** [`lib/auth/requireRole.ts`](file:///home/dibyanshu/My-Projects/Medi-Help/lib/auth/requireRole.ts)  
+    Contains `requireRole(allowedRoles: string[])` for simple, role-level checks on the server.
+4.  **Client-Side Hook:** [`context/AuthContext.tsx`](file:///home/dibyanshu/My-Projects/Medi-Help/context/AuthContext.tsx)  
+    Provides the `useAuth()` hook which exposes `hasPermission(permission: Permission)` to easily hide or disable buttons/UI elements for certain users.
+5.  **NextAuth Session Augmentation:** [`types/next-auth.d.ts`](file:///home/dibyanshu/My-Projects/Medi-Help/types/next-auth.d.ts)  
+    Extends the NextAuth user session so that the `role` is accessible on both the client (via `useSession()`) and the server (via `getServerSession()`).
+
+### How to Control / Enforce Access (Developer Guide)
+
+#### A. Protecting a Server Action or API Route (Recommended: Permission-Based)
+Use `requirePermission` inside your server functions. If the user does not have the corresponding permission, the function will throw an error immediately:
+
 ```typescript
-// In Server Actions or API routes
-import { requireRole } from '@/lib/auth/requireRole'
+import { requirePermission } from '@/lib/permissions.server';
+import { Permission } from '@/lib/permissions';
 
-await requireRole(['DOCTOR'])           // Throws if not a DOCTOR
-const isDoc = await hasRole('DOCTOR')   // Returns boolean for conditional rendering
+export async function createVisitAction(formData: FormData) {
+  // Enforce the user has permission to write a visit
+  await requirePermission(Permission.VISIT_CREATE);
+
+  // ... execute your action logic
+}
 ```
 
-### Type Augmentation
-NextAuth types are extended in `types/next-auth.d.ts` to include `id: string` and `role: string` on `Session.user`, `User`, and `JWT`.
+#### B. Protecting a Page (Server Component)
+Verify the user's role before rendering the page, redirecting unauthorized users:
+
+```typescript
+import { getServerSession } from 'next-auth';
+import { redirect } from 'next/navigation';
+import { authOptions } from '@/lib/authOptions';
+
+export default async function BillingPage() {
+  const session = await getServerSession(authOptions);
+  if (!session) redirect('/login');
+  
+  // Restrict to DOCTOR and ADMIN only
+  if (session.user.role !== 'DOCTOR' && session.user.role !== 'ADMIN') {
+    redirect('/unauthorized'); // or redirect to the dashboard
+  }
+
+  // ... render the page
+}
+```
+
+#### C. Conditional UI Rendering (Client Component)
+Use the `useAuth` hook to hide elements that a user does not have permissions to access:
+
+```tsx
+'use client'
+import { useAuth } from '@/context/AuthContext';
+import { Permission } from '@/lib/permissions';
+
+export function ActionPanel() {
+  const { hasPermission } = useAuth();
+
+  return (
+    <div>
+      {/* Only render the delete button if they have permission */}
+      {hasPermission(Permission.PATIENT_DELETE) && (
+        <button className="bg-red-500">Delete Patient</button>
+      )}
+    </div>
+  );
+}
+```
+
+#### D. How to Add a New Role
+1. Open [`modules/auth/auth.constants.ts`](file:///home/dibyanshu/My-Projects/Medi-Help/modules/auth/auth.constants.ts) and add the new role to the `ROLES` object:
+   ```typescript
+   export const ROLES = {
+     DOCTOR: 'DOCTOR',
+     RECEPTIONIST: 'RECEPTIONIST',
+     ADMIN: 'ADMIN',
+     NURSE: 'NURSE', // New Role
+   } as const;
+   ```
+2. Open [`lib/permissions.ts`](file:///home/dibyanshu/My-Projects/Medi-Help/lib/permissions.ts) and map the appropriate permissions to the new role in `ROLE_PERMISSIONS`:
+   ```typescript
+   export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
+     DOCTOR: Object.values(Permission),
+     ADMIN: Object.values(Permission),
+     RECEPTIONIST: [ ... ],
+     NURSE: [
+       Permission.PATIENT_READ,
+       Permission.VISIT_READ,
+     ]
+   }
+   ```
+3. Update [`modules/user/user.constants.ts`](file:///home/dibyanshu/My-Projects/Medi-Help/modules/user/user.constants.ts) to define the new role's Display Name and Description.
 
 ---
 
-## 🌐 API Routes
+## 🏢 Multi-Tenant Architecture & Data Isolation
 
-The application primarily uses Server Actions for mutations, but has two REST API routes:
+Medi-Help is built to partition data by "Tenant" (Clinic). 
 
-| Method | Endpoint | Purpose | Used By |
-|---|---|---|---|
-| `GET` | `/api/patients/[id]` | Fetch patient name and basic info | New Visit form (client-side fetch for display) |
-| `GET` | `/api/patient-types` | List all patient types | New Patient form (dropdown population) |
-| `*` | `/api/auth/[...nextauth]` | NextAuth authentication endpoints | Login flow |
-
-### Server Actions (Primary Mutation Layer)
-
-| Action | File | Description |
-|---|---|---|
-| `createPatient` | `app/patients/actions.ts` | Creates patient with auto-generated ID |
-| `updatePatient` | `app/patients/actions.ts` | Updates demographics |
-| `getPatientTypes` | `app/patients/actions.ts` | Fetches patient type list |
-| `createVisit` | `app/patients/[id]/visits/actions.ts` | Records visit + auto follow-up |
-| `rescheduleFollowUp` | `app/followups/actions.ts` | Reschedules to new date |
-| `markAsVisited` | `app/followups/actions.ts` | Marks follow-up as attended |
-| `updateFollowUpStatus` | `app/followups/actions.ts` | Updates status + notes |
-
----
-
-## 🧩 UI Component Library
-
-Located in `app/components/ui/`:
-
-| Component | Description |
-|---|---|
-| `StatCard` | KPI card with icon (emoji), title, value, optional subtitle, optional link, and danger variant |
-| `Badge` | Colored label pill — variants: `default`, `secondary`, `success`, `danger`, `warning` |
-| `Card` | Card container with title section and content area |
-| `Pagination` | Page number navigation with prev/next, preserves query params |
-| `Search` | Debounced search input that syncs to URL `?q=` param |
-| `Filter` | Dropdown filter that syncs to URL query params |
-| `FilterPopover` | Advanced popover with multiple filter options |
-| `DashboardFilter` | Dashboard-specific combined filters |
-| `DateRangeFilter` | Preset date range selector (This Week, This Month, Last 30 Days, etc.) |
-| `ActiveFilters` | Displays and allows removing currently active filter tags |
-| `ExportButton` | Dropdown to trigger Excel or PDF export via `/api/export` |
-| `ClientTooltip` | Recharts-compatible tooltip with dark mode support |
-| `ThemeToggle` | System / Light / Dark theme switcher |
-
-### Layout Components (`components/`)
-
-| Component | Description |
-|---|---|
-| `AppLayout` | Root layout wrapper — conditionally renders sidebar (hidden on `/login`), handles responsive spacer |
-| `Sidebar` | Full navigation sidebar with 3 groups (Overview, Clinic, Finance), user avatar, sign out, collapse/expand on hover, mobile drawer |
-| `WhatsAppActions` | Opens WhatsApp Web with pre-filled message and phone number; includes copy-to-clipboard |
+*   **Database Partitioning:** The database contains a `Tenant` table. The main entities like `Patient` and `User` contain a `tenantId` field linking them back to the `Tenant`.
+*   **Query Filtering:** When performing database queries in repositories, all queries should be scoped with the current active user's `tenantId`.
+*   **Legacy Migrations:** If there are older records in your database created without a tenant (where `tenantId` is null), you can assign a default tenant to them by running:
+    ```bash
+    npx tsx scripts/migrate-default-tenant.ts
+    ```
 
 ---
 
 ## ⚙️ Local Development Setup
 
-### Prerequisites
-- **Node.js** v20+
-- **PostgreSQL** database (local, Docker, Supabase, or any hosted instance)
+### 1. Prerequisites
+*   **Node.js** v20 or higher.
+*   **PostgreSQL** Database. You can use a local PostgreSQL instance, a Docker container, or a cloud instance (e.g. Supabase).
 
-### Installation
+### 2. Installation & Setup
+Follow these steps to set up a local development environment:
 
 ```bash
-# 1. Clone the repository
+# Clone the repository
 git clone https://github.com/dibyansh01/Medi-Help.git
 cd Medi-Help
 
-# 2. Install dependencies
+# Install dependencies using the appropriate peer dependency flags
 npm install --legacy-peer-deps
 
-# 3. Configure environment variables
-cp .env.example .env   # Then edit .env with your values (see below)
+# Create and configure environmental variables
+cp .env.example .env
+# Open the .env file and fill in your DATABASE_URL and NEXTAUTH_SECRET.
 
-# 4. Push database schema
+# Push the database schema directly to your Database
 npx prisma db push
 
-# 5. Generate Prisma client
+# Generate the Prisma Client
 npx prisma generate
 
-# 6. (Optional) Seed the database with demo data
+# Seed the database with mock patients, users, and clinical records
 npx --yes tsx prisma/seed.ts
 
-# 7. Start the development server
+# Start the local development server
 npm run dev
 ```
-
 The application will be available at **`http://localhost:3000`**.
 
-### Available Scripts
-
-| Command | Description |
-|---|---|
-| `npm run dev` | Start Next.js development server |
-| `npm run build` | Create production build |
-| `npm run start` | Start production server |
-| `npm run lint` | Run ESLint checks |
-| `npx prisma studio` | Open Prisma Studio GUI for database |
-| `npx prisma db push` | Push schema changes to database |
-| `npx prisma generate` | Regenerate Prisma client |
-| `npx --yes tsx prisma/seed.ts` | Seed database with demo data |
+### 3. Available Scripts
+*   `npm run dev`: Starts the Next.js development server in Turbopack mode.
+*   `npm run build`: Compiles the application for production.
+*   `npm run start`: Runs the built production server.
+*   `npm run lint`: Runs ESLint checks.
+*   `npx prisma studio`: Launches a local GUI for interacting with the database tables.
 
 ---
 
-## 🌱 Database Seeding
+## 🌱 Database Seeding & Mock Accounts
 
-The seed script (`prisma/seed.ts`) populates the database with realistic demo data:
+The seeding script (`prisma/seed.ts`) populates the database with:
+*   **2 Users** with preloaded Roles.
+*   **5 Patient Types** (General, Diabetic, Cardiac, Pediatric, Orthopedic).
+*   **12 Patients** with complete medical histories.
+*   **11 Visits** spanning various vitals and prescriptions.
+*   **9 Follow-up tasks** with varying statuses.
 
-### Seeded Data
-
-| Entity | Count | Details |
+### Default Login Accounts
+| Account Type | Email | Password |
 |---|---|---|
-| **Users** | 2 | Dr. Dibyanshu (DOCTOR), Priya Sharma (RECEPTIONIST) |
-| **Patient Types** | 5 | General, Diabetic, Cardiac, Pediatric, Orthopedic |
-| **Patients** | 12 | Realistic Indian names, varied demographics, blood groups, conditions |
-| **Visits** | 11 | Spread across last 60 days with vitals, diagnoses, prescriptions, fees |
-| **Follow-ups** | ~9 | Mix of auto-generated (from visits) and manual, varied statuses |
+| **Doctor (Full Access)** | `doctor@medihelp.com` | `doctor123` |
+| **Receptionist (Operational Access)** | `reception@medihelp.com` | `reception123` |
 
-### Demo Credentials
-
-| Role | Email | Password |
-|---|---|---|
-| Doctor | `doctor@medihelp.com` | `doctor123` |
-| Receptionist | `reception@medihelp.com` | `reception123` |
-
-### Creating Additional Users
-
-Use the `password.js` utility to generate bcrypt hashes, then insert directly via Prisma Studio or SQL:
-
+To generate new encrypted passwords to place into the database manually:
 ```bash
-node password.js   # Outputs bcrypt hash for 'password123'
+node password.js # Generates a bcrypt hash of 'password123'
 ```
 
 ---
 
 ## 🔑 Environment Variables
-
-Create a `.env` file in the project root:
-
+Your `.env` file must contain:
 ```env
-# PostgreSQL Connection String (required)
-DATABASE_URL="postgresql://user:password@localhost:5432/medihelp?schema=public"
+# Database connection string
+DATABASE_URL="postgresql://<username>:<password>@<host>:<port>/<db>?schema=public"
 
-# NextAuth Configuration (required)
-NEXTAUTH_SECRET="your-random-secret-string-at-least-32-chars"
+# NextAuth Configuration
+NEXTAUTH_SECRET="your-32-character-secret-key"
 NEXTAUTH_URL="http://localhost:3000"
 ```
 
-| Variable | Required | Description |
-|---|---|---|
-| `DATABASE_URL` | ✅ | PostgreSQL connection string |
-| `NEXTAUTH_SECRET` | ✅ | Secret for JWT encryption (generate with `openssl rand -base64 32`) |
-| `NEXTAUTH_URL` | ✅ | Base URL of the application |
+---
+
+## 📦 Tech Stack & Dependencies
+*   **Framework:** Next.js 16.1.4 (App Router)
+*   **UI & Styling:** React 19.2.3, Ant Design 6.3.3, Tailwind CSS 4.x
+*   **ORM / Database:** Prisma 7.3.0, PostgreSQL (via `@prisma/adapter-pg` & `pg` driver)
+*   **Authentication:** NextAuth.js 4.24.13, bcrypt 6.0.0
+*   **Analytics & Exports:** Recharts 3.7.0, jsPDF (PDF reports), ExcelJS (Excel exports)
 
 ---
 
-## 📦 Tech Stack Summary
-
-| Layer | Technology | Version | Purpose |
-|---|---|---|---|
-| **Framework** | Next.js (App Router) | 16.1.4 | Full-stack React framework with RSC & Server Actions |
-| **Runtime** | React | 19.2.3 | UI library |
-| **Language** | TypeScript | 5.x | End-to-end type safety |
-| **Database** | PostgreSQL | — | ACID-compliant relational database |
-| **ORM** | Prisma | 7.3.0 | Type-safe database access, schema management, migrations |
-| **DB Adapter** | @prisma/adapter-pg | 7.3.0 | Direct PostgreSQL wire protocol via `pg` driver |
-| **Auth** | NextAuth.js | 4.24.13 | Credentials-based auth with JWT sessions |
-| **Hashing** | bcrypt | 6.0.0 | Password hashing (10 salt rounds) |
-| **UI Framework** | Ant Design | 6.3.3 | Form components (InputNumber, Checkbox, Card) |
-| **Styling** | Tailwind CSS | 4.x | Utility-first CSS with custom design tokens |
-| **Charts** | Recharts | 3.7.0 | Interactive data visualizations |
-| **Icons** | Lucide React | 0.563.0 | Consistent SVG icon set |
-| **PDF Gen** | jsPDF + jspdf-autotable | 4.1.0 / 5.0.7 | Client-side PDF generation for prescriptions |
-| **Excel Export** | ExcelJS | 4.4.0 | Spreadsheet generation for data exports |
-| **Theming** | next-themes | 0.4.6 | Dark/light/system theme management |
-| **CSS Utils** | clsx + tailwind-merge | 2.1.1 / 3.4.0 | Conditional class merging |
-
----
-
-## 🔒 Security & Data Integrity
-
-- **Password Hashing** — All passwords hashed with `bcrypt` (10 salt rounds) before storage.
-- **JWT Sessions** — Stateless authentication via encrypted JWT tokens; no server-side session store.
-- **Server-Side Validation** — All mutations run as Server Actions on the server; client never sends raw SQL.
-- **Immutable Medical Records** — Visit records are append-only; no update/delete actions exist.
-- **Role-Based Access** — `requireRole()` guard throws on unauthorized access attempts.
-- **Type Safety** — End-to-end TypeScript prevents runtime type errors at compile time.
-- **SQL Injection Prevention** — Prisma's parameterized queries handle all database access (raw queries use `$queryRawUnsafe` only for aggregate analytics).
-
----
-
-## 📄 License
-
-This project is private. For commercial usage permissions or technical queries, please contact the maintainer.
+## 🛡️ Security & Data Integrity
+*   **Bcrypt Encryption:** Protects credentials.
+*   **Stateless Sessions:** Leverages NextAuth JSON Web Tokens (JWT) containing userId and role for verification.
+*   **Immutable Medical Ledger:** Visits cannot be updated or deleted, providing audit certainty for medical history.
+*   **Asynchronous Auditing:** Real-time logging of user activity (creates, updates, logins, exports) runs in a fire-and-forget manner to keep critical paths fast and error-resilient.

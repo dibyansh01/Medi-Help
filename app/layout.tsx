@@ -1,12 +1,12 @@
 import './globals.css'
 import { Providers } from './providers'
-import { AppLayout } from '@/components/AppLayout'
 
 /**
  * Root Layout for the application.
  * Wraps the entire application with necessary providers and global styles.
- * @param {Object} props - Component props
- * @param {React.ReactNode} props.children - Child components to render
+ * Layout-specific chrome (sidebar, navigation) is handled by route group layouts:
+ *   - (public)/layout.tsx — minimal layout for login, signup, etc.
+ *   - (authenticated)/layout.tsx — layout with sidebar for dashboard, patients, etc.
  */
 import type { Metadata } from 'next'
 
@@ -30,9 +30,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
         <Providers>
-          <AppLayout>
-            {children}
-          </AppLayout>
+          {children}
         </Providers>
       </body>
     </html>
